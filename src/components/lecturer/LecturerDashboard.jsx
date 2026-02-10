@@ -1,10 +1,95 @@
 import React, { useState, useEffect } from 'react';
-import { Sparkles, Calendar, X, Loader2, PieChart, BarChart2, Users, Filter, MoreHorizontal, Bell, Download } from 'lucide-react';
+import { Sparkles, Calendar, X, Loader2, PieChart, BarChart2, Users, Filter, MoreHorizontal, Bell, Download, AlertTriangle, CheckCircle, AlertOctagon } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart as RPieChart, Pie, Cell, Legend, Sector } from 'recharts';
 import { callGemini } from '../../services/gemini';
 import { notifyAttendanceSaved } from '../../services/notificationService';
 import RiskBadge from '../common/RiskBadge';
 import { downloadExcel, downloadPDF } from '../../utils/downloadReport';
+import { predictHours } from '../../utils';
+
+const StudentDetailsModal = ({ student, onClose }) => {
+  if (!student) return null;
+
+  const neededHours = predictHours(student.attendedHours, student.totalHours, 0.75);
+  const isSafe = student.pct >= 75;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+        <div className="relative h-24 bg-gradient-to-r from-blue-600 to-indigo-600">
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 p-2 bg-white/20 hover:bg-white/30 text-white rounded-full transition-colors"
+          >
+            <X size={20} />
+          </button>
+          <div className="absolute -bottom-10 left-6">
+            <div className="w-20 h-20 rounded-2xl bg-white p-1 shadow-lg">
+              <div className="w-full h-full rounded-xl bg-slate-100 flex items-center justify-center text-3xl font-bold text-slate-700">
+                {student.studentName.charAt(0)}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="pt-12 px-6 pb-6">
+          <h3 className="text-xl font-bold text-slate-800">{student.studentName}</h3>
+          <p className="text-slate-500 font-medium">{student.rollNo}</p>
+
+          <div className="mt-6 space-y-4">
+            <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100">
+              <div>
+                <p className="text-sm font-semibold text-slate-500 uppercase tracking-wide">Attendance</p>
+                <div className="flex items-end gap-2 mt-1">
+                  <span className="text-3xl font-black text-slate-800">{student.pct.toFixed(1)}%</span>
+                  <span className="text-sm font-medium text-slate-500 mb-1.5">
+                    ({student.attendedHours}/{student.totalHours} hrs)
+                  </span>
+                </div>
+              </div>
+              <RiskBadge percent={student.pct} />
+            </div>
+
+            {!isSafe && (
+              <div className="flex gap-3 p-4 bg-amber-50 rounded-xl border border-amber-100 text-amber-800">
+                <AlertTriangle className="shrink-0 mt-0.5" size={20} />
+                <div>
+                  <p className="font-bold">Attention Needed</p>
+                  <p className="text-sm mt-1 opacity-90">
+                    Must attend <span className="font-black text-lg">{neededHours}</span> more hours to reach 75% attendance.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {isSafe && (
+              <div className="flex gap-3 p-4 bg-green-50 rounded-xl border border-green-100 text-green-800">
+                <CheckCircle className="shrink-0 mt-0.5" size={20} />
+                <div>
+                  <p className="font-bold">Good Standing</p>
+                  <p className="text-sm mt-1 opacity-90">
+                    Student is maintaining required attendance levels.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 gap-3 mt-4">
+              <div className="p-3 bg-slate-50 rounded-lg border border-slate-100">
+                <p className="text-xs text-slate-500 font-medium uppercase">Branch</p>
+                <p className="font-semibold text-slate-700">{student.branch || 'N/A'}</p>
+              </div>
+              <div className="p-3 bg-slate-50 rounded-lg border border-slate-100">
+                <p className="text-xs text-slate-500 font-medium uppercase">Year</p>
+                <p className="font-semibold text-slate-700">Year {student.year || 'N/A'}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const LecturerDashboard = ({ user, students, attendanceData }) => {
   const [aiReport, setAiReport] = useState(null);
@@ -18,6 +103,7 @@ const LecturerDashboard = ({ user, students, attendanceData }) => {
   const [selectedBranch, setSelectedBranch] = useState(user.branch || 'CSE');
   const [selectedYear, setSelectedYear] = useState(user.academicYear || '1');
   const [selectedMonth, setSelectedMonth] = useState('all');
+  const [selectedStudent, setSelectedStudent] = useState(null);
 
   useEffect(() => {
     if (user.branch) setSelectedBranch(user.branch);
@@ -65,7 +151,7 @@ const LecturerDashboard = ({ user, students, attendanceData }) => {
     const attendedHours = records.reduce((sum, r) => sum + r.attendedHours, 0);
     const pct = totalHours > 0 ? (attendedHours / totalHours) * 100 : 0;
 
-    return { id: student.id, studentName: student.name, rollNo: student.rollNo, pct, totalHours, attendedHours };
+    return { id: student.id, studentName: student.name, rollNo: student.rollNo, pct, totalHours, attendedHours, branch: student.branch, year: student.year };
   });
 
   let safe = 0, warning = 0, critical = 0;
@@ -583,12 +669,15 @@ const LecturerDashboard = ({ user, students, attendanceData }) => {
                   <th className="px-6 py-4 text-center">Attended</th>
                   <th className="px-6 py-4 text-center">Percentage</th>
                   <th className="px-6 py-4 text-center">Status</th>
-                  <th className="px-6 py-4">Progress</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {sortedStudents.map(s => (
-                  <tr key={s.id} className="hover:bg-slate-50 transition-colors group">
+                  <tr
+                    key={s.id}
+                    className="hover:bg-slate-50 transition-colors group cursor-pointer"
+                    onClick={() => setSelectedStudent(s)}
+                  >
                     {sortBy === 'rank' && (
                       <td className="px-6 py-4">
                         <span className={`font-bold ${s.rank <= 3 ? 'text-amber-500' : 'text-slate-400'}`}>
@@ -597,7 +686,12 @@ const LecturerDashboard = ({ user, students, attendanceData }) => {
                       </td>
                     )}
                     <td className="px-6 py-4">
-                      <div className="font-bold text-base text-slate-800">{s.studentName}</div>
+                      <div className="flex items-center gap-2">
+                        <div className="font-bold text-base text-slate-800">{s.studentName}</div>
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-800 border border-slate-200">
+                          Year {s.year}
+                        </span>
+                      </div>
                       <div className="text-sm text-slate-500 font-mono">{s.rollNo}</div>
                     </td>
                     <td className="px-6 py-4 text-center">
@@ -610,17 +704,41 @@ const LecturerDashboard = ({ user, students, attendanceData }) => {
                       <span className="font-bold text-lg text-slate-800">{s.pct.toFixed(1)}%</span>
                     </td>
                     <td className="px-6 py-4 text-center">
-                      <RiskBadge percent={s.pct} />
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden min-w-[100px]">
-                          <div
-                            className={`h-full rounded-full ${s.pct >= 75 ? 'bg-green-500' : s.pct >= 65 ? 'bg-orange-500' : 'bg-red-500'}`}
-                            style={{ width: `${s.pct}%` }}
-                          />
+                      {s.pct >= 75 ? (
+                        <div className="group/badge inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-100 shadow-sm hover:shadow-md transition-all cursor-default">
+                          <div className="p-1 bg-white rounded-full text-emerald-500 shadow-sm group-hover/badge:scale-110 transition-transform">
+                            <CheckCircle size={12} strokeWidth={2.5} />
+                          </div>
+                          <div className="text-left">
+                            <p className="text-[9px] uppercase tracking-wider font-bold text-emerald-400 leading-none mb-0.5">On Track</p>
+                            <p className="text-xs font-bold text-emerald-700 leading-none">Safe</p>
+                          </div>
                         </div>
-                      </div>
+                      ) : s.pct >= 65 ? (
+                        <div className="group/badge inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-100 shadow-sm hover:shadow-md transition-all cursor-default">
+                          <div className="p-1 bg-white rounded-full text-amber-500 shadow-sm group-hover/badge:scale-110 transition-transform">
+                            <AlertTriangle size={12} strokeWidth={2.5} />
+                          </div>
+                          <div className="text-left">
+                            <p className="text-[9px] uppercase tracking-wider font-bold text-amber-400 leading-none mb-0.5">Warning</p>
+                            <p className="text-xs font-bold text-amber-700 leading-none">
+                              Need {predictHours(s.attendedHours, s.totalHours, 0.75)} Hrs
+                            </p>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="group/badge inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gradient-to-r from-rose-50 to-red-50 border border-rose-100 shadow-sm hover:shadow-md transition-all cursor-default">
+                          <div className="p-1 bg-white rounded-full text-rose-500 shadow-sm group-hover/badge:scale-110 transition-transform">
+                            <AlertOctagon size={12} strokeWidth={2.5} />
+                          </div>
+                          <div className="text-left">
+                            <p className="text-[9px] uppercase tracking-wider font-bold text-rose-400 leading-none mb-0.5">Critical</p>
+                            <p className="text-xs font-bold text-rose-700 leading-none">
+                              Need {predictHours(s.attendedHours, s.totalHours, 0.75)} Hrs
+                            </p>
+                          </div>
+                        </div>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -646,6 +764,10 @@ const LecturerDashboard = ({ user, students, attendanceData }) => {
           )}
         </div>
       </div>
+      <StudentDetailsModal
+        student={selectedStudent}
+        onClose={() => setSelectedStudent(null)}
+      />
     </div>
   );
 };
