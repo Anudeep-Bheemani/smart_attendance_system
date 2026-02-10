@@ -13,8 +13,8 @@ const LecturerDashboard = ({ user, students, attendanceData }) => {
   const [activeFilter, setActiveFilter] = useState('all');
   const [sortBy, setSortBy] = useState('name');
   const [activePieIndex, setActivePieIndex] = useState(null);
-  const [branchFilter, setBranchFilter] = useState('all');
-  const [yearFilter, setYearFilter] = useState('all');
+  const [branchFilter, setBranchFilter] = useState(user.branch || 'CSE');
+  const [yearFilter, setYearFilter] = useState(user.academicYear || '1');
   const [selectedBranch, setSelectedBranch] = useState(user.branch || 'CSE');
   const [selectedYear, setSelectedYear] = useState(user.academicYear || '1');
   const [selectedMonth, setSelectedMonth] = useState('all');
