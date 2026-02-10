@@ -23,7 +23,7 @@ const LecturerRecordManager = ({ students, setStudents, branches, setBranches })
 
   const filteredStudents = students.filter(s => {
     const branchMatch = filterBranch === 'all' || s.branch === filterBranch;
-    const yearMatch = filterYear === 'all' || s.year === parseInt(filterYear);
+    const yearMatch = filterYear === 'all' || String(s.year) === String(filterYear);
     const searchMatch = !searchQuery ||
       s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       s.rollNo.toLowerCase().includes(searchQuery.toLowerCase()) ||
