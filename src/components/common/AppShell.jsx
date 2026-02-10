@@ -35,7 +35,15 @@ const AppShell = ({ user, onLogout, children, activeView, setActiveView, darkMod
 
   return (
     <div className="flex h-screen bg-slate-50 overflow-hidden font-sans">
-      <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 text-slate-300 transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      {/* Mobile Backdrop */}
+      {isMobileMenuOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-40 md:hidden backdrop-blur-sm"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
+
+      <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 text-slate-300 transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} shadow-2xl md:shadow-none`}>
         <div className="flex items-center justify-between p-6 border-b border-slate-800">
           <div className="flex items-center gap-2 font-bold text-white text-xl">
             <GraduationCap className="text-blue-500" />
@@ -98,7 +106,7 @@ const AppShell = ({ user, onLogout, children, activeView, setActiveView, darkMod
           </div>
         </header>
 
-        <div className="flex-1 overflow-auto p-6 scroll-smooth">
+        <div className="flex-1 overflow-auto p-4 md:p-6 scroll-smooth">
           <div className="max-w-7xl mx-auto">
             {children}
           </div>

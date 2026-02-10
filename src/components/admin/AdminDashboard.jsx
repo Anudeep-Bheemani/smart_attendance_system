@@ -23,12 +23,12 @@ const AdminDashboard = ({ students, attendanceData, staffList }) => {
         return r.studentId === s.id && monthMatch;
       });
       if (records.length === 0) return { ...s, percentage: 0, totalHours: 0, attendedHours: 0, trend: 0 };
-      
+
       const tot = records.reduce((a, b) => a + b.totalHours, 0);
       const att = records.reduce((a, b) => a + b.attendedHours, 0);
       const percentage = parseFloat(calculatePercentage(att, tot));
       const trend = Math.random() > 0.5 ? 1 : -1; // Mock trend
-      
+
       return { ...s, percentage, totalHours: tot, attendedHours: att, trend };
     });
   }, [students, attendanceData, selectedMonth]);
@@ -40,7 +40,7 @@ const AdminDashboard = ({ students, attendanceData, staffList }) => {
     const warning = studentStats.filter(s => s.percentage >= 65 && s.percentage < 75).length;
     const critical = studentStats.filter(s => s.percentage < 65).length;
     const avgAttendance = totalStudents > 0 ? (studentStats.reduce((acc, s) => acc + s.percentage, 0) / totalStudents).toFixed(1) : 0;
-    
+
     return { totalStudents, safe, warning, critical, avgAttendance };
   }, [studentStats]);
 
@@ -57,7 +57,7 @@ const AdminDashboard = ({ students, attendanceData, staffList }) => {
     }
 
     if (searchQuery) {
-      filtered = filtered.filter(s => 
+      filtered = filtered.filter(s =>
         s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         s.rollNo.toLowerCase().includes(searchQuery.toLowerCase())
       );
@@ -181,7 +181,7 @@ const AdminDashboard = ({ students, attendanceData, staffList }) => {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
         <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
           <div className="flex justify-between items-start">
             <div>
@@ -321,9 +321,9 @@ const AdminDashboard = ({ students, attendanceData, staffList }) => {
                 <YAxis />
                 <RechartsTooltip />
                 <Legend />
-                <Bar dataKey="safe" stackId="a" fill="#22c55e" name="Safe" radius={[0,0,0,0]} />
-                <Bar dataKey="warning" stackId="a" fill="#f97316" name="Warning" radius={[0,0,0,0]} />
-                <Bar dataKey="critical" stackId="a" fill="#ef4444" name="Critical" radius={[4,4,0,0]} />
+                <Bar dataKey="safe" stackId="a" fill="#22c55e" name="Safe" radius={[0, 0, 0, 0]} />
+                <Bar dataKey="warning" stackId="a" fill="#f97316" name="Warning" radius={[0, 0, 0, 0]} />
+                <Bar dataKey="critical" stackId="a" fill="#ef4444" name="Critical" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -387,8 +387,8 @@ const AdminDashboard = ({ students, attendanceData, staffList }) => {
           <Filter size={18} />
           <span>Filters</span>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
-          <select 
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          <select
             className="px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm font-medium"
             value={selectedMonth}
             onChange={(e) => setSelectedMonth(e.target.value)}
@@ -397,7 +397,7 @@ const AdminDashboard = ({ students, attendanceData, staffList }) => {
             {months.map(m => <option key={m} value={m}>{m}</option>)}
           </select>
 
-          <select 
+          <select
             className="px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm font-medium"
             value={selectedYear}
             onChange={(e) => setSelectedYear(e.target.value)}
@@ -406,7 +406,7 @@ const AdminDashboard = ({ students, attendanceData, staffList }) => {
             {years.map(y => <option key={y} value={y}>Year {y}</option>)}
           </select>
 
-          <select 
+          <select
             className="px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm font-medium"
             value={selectedBranch}
             onChange={(e) => setSelectedBranch(e.target.value)}
@@ -415,7 +415,7 @@ const AdminDashboard = ({ students, attendanceData, staffList }) => {
             {branches.map(b => <option key={b} value={b}>{b}</option>)}
           </select>
 
-          <select 
+          <select
             className="px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm font-medium"
             value={riskFilter}
             onChange={(e) => setRiskFilter(e.target.value)}
@@ -438,7 +438,7 @@ const AdminDashboard = ({ students, attendanceData, staffList }) => {
 
           <div className="relative">
             <Search className="absolute left-3 top-3 text-slate-400" size={18} />
-            <input 
+            <input
               type="text"
               placeholder="Search..."
               className="w-full pl-10 pr-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
@@ -447,13 +447,13 @@ const AdminDashboard = ({ students, attendanceData, staffList }) => {
             />
           </div>
         </div>
-        
-        <div className="flex items-center justify-between mt-4 pt-4 border-t border-slate-100">
+
+        <div className="flex flex-col sm:flex-row items-center justify-between mt-4 pt-4 border-t border-slate-100 gap-4 sm:gap-0">
           <div className="flex items-center gap-3">
             <button className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors shadow-sm">
               Apply Filters
             </button>
-            <button 
+            <button
               onClick={() => {
                 setSelectedMonth('all');
                 setSelectedYear('all');
@@ -476,7 +476,7 @@ const AdminDashboard = ({ students, attendanceData, staffList }) => {
 
       {/* Student Attendance Table */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="p-6 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+        <div className="p-4 md:p-6 border-b border-slate-100 bg-slate-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <h3 className="font-bold text-lg text-slate-800">Student Attendance Health</h3>
             <p className="text-sm text-slate-500 mt-1">Showing {sortedStudents.length} students</p>
@@ -498,7 +498,7 @@ const AdminDashboard = ({ students, attendanceData, staffList }) => {
             </button>
           </div>
         </div>
-        
+
         <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
           <table className="w-full text-base text-left">
             <thead className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200 sticky top-0">
@@ -514,42 +514,43 @@ const AdminDashboard = ({ students, attendanceData, staffList }) => {
             <tbody className="divide-y divide-slate-100">
               {sortedStudents.map(student => {
                 return (
-                <tr key={student.id} className="hover:bg-slate-50 transition-colors">
-                  {sortBy === 'rank' && (
-                    <td className="px-6 py-4">
-                      <span className={`font-bold ${student.rank <= 3 ? 'text-amber-500' : 'text-slate-400'}`}>
-                        #{student.rank}
-                      </span>
-                    </td>
-                  )}
-                  <td className="px-6 py-4 font-mono text-slate-600">{student.rollNo}</td>
-                  <td className="px-6 py-4">
-                    <div className="font-medium text-slate-800">{student.name}</div>
-                    <div className="text-sm text-slate-500">{student.branch} • Year {student.year}</div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="flex-1 h-3 bg-slate-100 rounded-full overflow-hidden">
-                        <div 
-                          className={`h-full ${student.percentage >= 75 ? 'bg-green-500' : student.percentage >= 65 ? 'bg-orange-500' : 'bg-red-500'}`}
-                          style={{ width: `${student.percentage}%` }}
-                        />
-                      </div>
-                      <span className="font-bold text-slate-700 w-14">{student.percentage}%</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-center">
-                    <RiskBadge percent={student.percentage} />
-                  </td>
-                  <td className="px-6 py-4 text-center">
-                    {student.trend > 0 ? (
-                      <TrendingUp size={20} className="text-green-600 mx-auto" />
-                    ) : (
-                      <TrendingDown size={20} className="text-red-600 mx-auto" />
+                  <tr key={student.id} className="hover:bg-slate-50 transition-colors">
+                    {sortBy === 'rank' && (
+                      <td className="px-6 py-4">
+                        <span className={`font-bold ${student.rank <= 3 ? 'text-amber-500' : 'text-slate-400'}`}>
+                          #{student.rank}
+                        </span>
+                      </td>
                     )}
-                  </td>
-                </tr>
-              );})}
+                    <td className="px-6 py-4 font-mono text-slate-600">{student.rollNo}</td>
+                    <td className="px-6 py-4">
+                      <div className="font-medium text-slate-800">{student.name}</div>
+                      <div className="text-sm text-slate-500">{student.branch} • Year {student.year}</div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="flex-1 h-3 bg-slate-100 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full ${student.percentage >= 75 ? 'bg-green-500' : student.percentage >= 65 ? 'bg-orange-500' : 'bg-red-500'}`}
+                            style={{ width: `${student.percentage}%` }}
+                          />
+                        </div>
+                        <span className="font-bold text-slate-700 w-14">{student.percentage}%</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <RiskBadge percent={student.percentage} />
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      {student.trend > 0 ? (
+                        <TrendingUp size={20} className="text-green-600 mx-auto" />
+                      ) : (
+                        <TrendingDown size={20} className="text-red-600 mx-auto" />
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -563,7 +564,7 @@ const AdminDashboard = ({ students, attendanceData, staffList }) => {
             Email Notifications
           </h3>
         </div>
-        
+
         <div className="p-4 space-y-3 max-h-[500px] overflow-y-auto">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <button
@@ -580,7 +581,7 @@ const AdminDashboard = ({ students, attendanceData, staffList }) => {
               <Bell size={16} />
               Send Student/Parent Reports
             </button>
-            
+
             <button
               onClick={() => {
                 (staffList || []).forEach(staff => {
@@ -598,15 +599,14 @@ const AdminDashboard = ({ students, attendanceData, staffList }) => {
             </button>
           </div>
           {recentAlerts.map(alert => (
-            <div key={alert.id} className={`p-3 rounded-lg border ${
-              alert.type === 'critical' ? 'bg-red-50 border-red-200' :
-              alert.type === 'warning' ? 'bg-orange-50 border-orange-200' :
-              'bg-green-50 border-green-200'
-            }`}>
+            <div key={alert.id} className={`p-3 rounded-lg border ${alert.type === 'critical' ? 'bg-red-50 border-red-200' :
+                alert.type === 'warning' ? 'bg-orange-50 border-orange-200' :
+                  'bg-green-50 border-green-200'
+              }`}>
               <div className="flex items-start gap-2">
                 {alert.type === 'critical' ? <XCircle size={16} className="text-red-600 mt-0.5" /> :
-                 alert.type === 'warning' ? <AlertTriangle size={16} className="text-orange-600 mt-0.5" /> :
-                 <CheckCircle size={16} className="text-green-600 mt-0.5" />}
+                  alert.type === 'warning' ? <AlertTriangle size={16} className="text-orange-600 mt-0.5" /> :
+                    <CheckCircle size={16} className="text-green-600 mt-0.5" />}
                 <div className="flex-1">
                   <p className="text-sm font-medium text-slate-800">{alert.message}</p>
                   <p className="text-xs text-slate-500 mt-1">{alert.time}</p>

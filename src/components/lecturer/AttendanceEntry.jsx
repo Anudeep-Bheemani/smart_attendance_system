@@ -5,13 +5,13 @@ import { calculatePercentage, predictHours } from '../../utils';
 import RiskBadge from '../common/RiskBadge';
 
 const AttendanceEntry = ({ students, attendanceData, updateAttendance, branches, subjects: subjectsFromProps }) => {
-  const [selectedYear, setSelectedYear] = useState("1"); 
+  const [selectedYear, setSelectedYear] = useState("1");
   const [selectedBranch, setSelectedBranch] = useState("CSE");
   const [selectedMonth, setSelectedMonth] = useState("October");
   const [selectedAcademicYear, setSelectedAcademicYear] = useState("2024");
   const [search, setSearch] = useState("");
-  const [selectedStudent, setSelectedStudent] = useState(null); 
-  const [subjectTotalHours, setSubjectTotalHours] = useState({}); 
+  const [selectedStudent, setSelectedStudent] = useState(null);
+  const [subjectTotalHours, setSubjectTotalHours] = useState({});
   const [isSaving, setIsSaving] = useState(false);
   const [attendanceFilter, setAttendanceFilter] = useState('all');
 
@@ -21,22 +21,22 @@ const AttendanceEntry = ({ students, attendanceData, updateAttendance, branches,
   const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
   const classStudents = students.filter(s => s.branch === selectedBranch && s.year === parseInt(selectedYear));
-  
-  let filteredStudents = classStudents.filter(s => 
-    s.name.toLowerCase().includes(search.toLowerCase()) || 
+
+  let filteredStudents = classStudents.filter(s =>
+    s.name.toLowerCase().includes(search.toLowerCase()) ||
     s.rollNo.toLowerCase().includes(search.toLowerCase())
   );
 
   // Calculate stats before filtering by attendance
   const stats = classStudents.reduce((acc, student) => {
-    const records = subjects.map(sub => 
-      attendanceData.find(r => r.studentId === student.id && r.subject === sub) || 
+    const records = subjects.map(sub =>
+      attendanceData.find(r => r.studentId === student.id && r.subject === sub) ||
       { totalHours: subjectTotalHours[sub] || 40, attendedHours: 0 }
     );
     const totalAttended = records.reduce((sum, r) => sum + r.attendedHours, 0);
     const totalHours = records.reduce((sum, r) => sum + r.totalHours, 0);
     const percent = calculatePercentage(totalAttended, totalHours);
-    
+
     if (percent >= 75) acc.safe++;
     else if (percent >= 65) acc.warning++;
     else acc.critical++;
@@ -46,14 +46,14 @@ const AttendanceEntry = ({ students, attendanceData, updateAttendance, branches,
   // Filter by attendance status
   if (attendanceFilter !== 'all') {
     filteredStudents = filteredStudents.filter(student => {
-      const records = subjects.map(sub => 
-        attendanceData.find(r => r.studentId === student.id && r.subject === sub) || 
+      const records = subjects.map(sub =>
+        attendanceData.find(r => r.studentId === student.id && r.subject === sub) ||
         { totalHours: subjectTotalHours[sub] || 40, attendedHours: 0 }
       );
       const totalAttended = records.reduce((sum, r) => sum + r.attendedHours, 0);
       const totalHours = records.reduce((sum, r) => sum + r.totalHours, 0);
       const percent = calculatePercentage(totalAttended, totalHours);
-      
+
       if (attendanceFilter === 'safe') return percent >= 75;
       if (attendanceFilter === 'warning') return percent >= 65 && percent < 75;
       if (attendanceFilter === 'critical') return percent < 65;
@@ -70,7 +70,7 @@ const AttendanceEntry = ({ students, attendanceData, updateAttendance, branches,
       });
       setSubjectTotalHours(hours);
     }
-  }, [selectedYear, selectedBranch, attendanceData]); 
+  }, [selectedYear, selectedBranch, attendanceData]);
 
   const handleAttendanceChange = (studentId, subject, field, value) => {
     const numValue = parseInt(value) || 0;
@@ -85,7 +85,7 @@ const AttendanceEntry = ({ students, attendanceData, updateAttendance, branches,
   const handleSubjectTotalChange = (subject, value) => {
     const newVal = parseInt(value) || 0;
     setSubjectTotalHours(prev => ({ ...prev, [subject]: newVal }));
-    
+
     filteredStudents.forEach(student => {
       updateAttendance(student.id, subject, 'totalHours', newVal, selectedMonth);
     });
@@ -103,9 +103,9 @@ const AttendanceEntry = ({ students, attendanceData, updateAttendance, branches,
     <div className="space-y-5">
       {/* Header Card */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 gap-4 md:gap-0">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center shadow-md">
+            <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center shadow-md shrink-0">
               <BookOpen size={24} className="text-white" />
             </div>
             <div>
@@ -113,10 +113,10 @@ const AttendanceEntry = ({ students, attendanceData, updateAttendance, branches,
               <p className="text-sm text-slate-600">{selectedMonth} {selectedAcademicYear} • {selectedBranch} Year {selectedYear}</p>
             </div>
           </div>
-          <button 
+          <button
             onClick={handleSave}
             disabled={isSaving}
-            className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold shadow-md hover:shadow-lg transition-all active:scale-95 disabled:opacity-60"
+            className="w-full md:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold shadow-md hover:shadow-lg transition-all active:scale-95 disabled:opacity-60"
           >
             {isSaving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
             Save Attendance
@@ -124,10 +124,10 @@ const AttendanceEntry = ({ students, attendanceData, updateAttendance, branches,
         </div>
 
         {/* Filters */}
-        <div className="grid grid-cols-6 gap-4 mb-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-5">
           <div>
             <label className="text-xs font-semibold text-slate-600 mb-1.5 block">Month</label>
-            <select 
+            <select
               className="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
               value={selectedMonth}
               onChange={(e) => setSelectedMonth(e.target.value)}
@@ -138,7 +138,7 @@ const AttendanceEntry = ({ students, attendanceData, updateAttendance, branches,
 
           <div>
             <label className="text-xs font-semibold text-slate-600 mb-1.5 block">Academic Year</label>
-            <input 
+            <input
               type="text"
               className="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
               value={selectedAcademicYear}
@@ -149,7 +149,7 @@ const AttendanceEntry = ({ students, attendanceData, updateAttendance, branches,
 
           <div>
             <label className="text-xs font-semibold text-slate-600 mb-1.5 block">Class Year</label>
-            <select 
+            <select
               className="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
               value={selectedYear}
               onChange={(e) => setSelectedYear(e.target.value)}
@@ -163,7 +163,7 @@ const AttendanceEntry = ({ students, attendanceData, updateAttendance, branches,
 
           <div>
             <label className="text-xs font-semibold text-slate-600 mb-1.5 block">Branch</label>
-            <select 
+            <select
               className="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
               value={selectedBranch}
               onChange={(e) => setSelectedBranch(e.target.value)}
@@ -176,9 +176,9 @@ const AttendanceEntry = ({ students, attendanceData, updateAttendance, branches,
             <label className="text-xs font-semibold text-slate-600 mb-1.5 block">Search</label>
             <div className="relative">
               <Search className="absolute left-3 top-3 text-slate-400" size={16} />
-              <input 
-                type="text" 
-                placeholder="Name or Roll..." 
+              <input
+                type="text"
+                placeholder="Name or Roll..."
                 className="w-full pl-9 pr-3 py-2.5 bg-white border border-slate-300 rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
@@ -188,47 +188,43 @@ const AttendanceEntry = ({ students, attendanceData, updateAttendance, branches,
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-4 gap-4">
-          <div 
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div
             onClick={() => setAttendanceFilter('all')}
-            className={`p-4 rounded-lg cursor-pointer transition-all ${
-              attendanceFilter === 'all'
-                ? 'bg-blue-600 text-white shadow-lg ring-2 ring-blue-300'
-                : 'bg-slate-50 border border-slate-200 hover:shadow-md'
-            }`}
+            className={`p-4 rounded-lg cursor-pointer transition-all ${attendanceFilter === 'all'
+              ? 'bg-blue-600 text-white shadow-lg ring-2 ring-blue-300'
+              : 'bg-slate-50 border border-slate-200 hover:shadow-md'
+              }`}
           >
             <div className={`text-2xl font-bold ${attendanceFilter === 'all' ? 'text-white' : 'text-slate-800'}`}>{classStudents.length}</div>
             <div className={`text-xs font-semibold uppercase tracking-wide mt-1 ${attendanceFilter === 'all' ? 'text-white/90' : 'text-slate-600'}`}>Total Students</div>
           </div>
-          <div 
+          <div
             onClick={() => setAttendanceFilter('safe')}
-            className={`p-4 rounded-lg cursor-pointer transition-all ${
-              attendanceFilter === 'safe'
-                ? 'bg-green-600 text-white shadow-lg ring-2 ring-green-300'
-                : 'bg-green-50 border border-green-200 hover:shadow-md'
-            }`}
+            className={`p-4 rounded-lg cursor-pointer transition-all ${attendanceFilter === 'safe'
+              ? 'bg-green-600 text-white shadow-lg ring-2 ring-green-300'
+              : 'bg-green-50 border border-green-200 hover:shadow-md'
+              }`}
           >
             <div className={`text-2xl font-bold ${attendanceFilter === 'safe' ? 'text-white' : 'text-green-700'}`}>{stats.safe}</div>
             <div className={`text-xs font-semibold uppercase tracking-wide mt-1 ${attendanceFilter === 'safe' ? 'text-white/90' : 'text-green-700'}`}>Safe (≥75%)</div>
           </div>
-          <div 
+          <div
             onClick={() => setAttendanceFilter('warning')}
-            className={`p-4 rounded-lg cursor-pointer transition-all ${
-              attendanceFilter === 'warning'
-                ? 'bg-orange-600 text-white shadow-lg ring-2 ring-orange-300'
-                : 'bg-orange-50 border border-orange-200 hover:shadow-md'
-            }`}
+            className={`p-4 rounded-lg cursor-pointer transition-all ${attendanceFilter === 'warning'
+              ? 'bg-orange-600 text-white shadow-lg ring-2 ring-orange-300'
+              : 'bg-orange-50 border border-orange-200 hover:shadow-md'
+              }`}
           >
             <div className={`text-2xl font-bold ${attendanceFilter === 'warning' ? 'text-white' : 'text-orange-700'}`}>{stats.warning}</div>
             <div className={`text-xs font-semibold uppercase tracking-wide mt-1 ${attendanceFilter === 'warning' ? 'text-white/90' : 'text-orange-700'}`}>Warning (65-75%)</div>
           </div>
-          <div 
+          <div
             onClick={() => setAttendanceFilter('critical')}
-            className={`p-4 rounded-lg cursor-pointer transition-all ${
-              attendanceFilter === 'critical'
-                ? 'bg-red-600 text-white shadow-lg ring-2 ring-red-300'
-                : 'bg-red-50 border border-red-200 hover:shadow-md'
-            }`}
+            className={`p-4 rounded-lg cursor-pointer transition-all ${attendanceFilter === 'critical'
+              ? 'bg-red-600 text-white shadow-lg ring-2 ring-red-300'
+              : 'bg-red-50 border border-red-200 hover:shadow-md'
+              }`}
           >
             <div className={`text-2xl font-bold ${attendanceFilter === 'critical' ? 'text-white' : 'text-red-700'}`}>{stats.critical}</div>
             <div className={`text-xs font-semibold uppercase tracking-wide mt-1 ${attendanceFilter === 'critical' ? 'text-white/90' : 'text-red-700'}`}>Critical (Below 65%)</div>
@@ -237,7 +233,7 @@ const AttendanceEntry = ({ students, attendanceData, updateAttendance, branches,
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden overflow-x-auto">
         {filteredStudents.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -254,7 +250,7 @@ const AttendanceEntry = ({ students, attendanceData, updateAttendance, branches,
                   <th className="px-5 py-3 text-left text-sm opacity-75 font-medium sticky left-0 bg-slate-800">Total Hours</th>
                   {subjects.map(sub => (
                     <th key={sub} className="px-4 py-3 text-center">
-                      <input 
+                      <input
                         type="number"
                         min="1"
                         className="w-16 px-2 py-1.5 bg-white/20 border border-white/30 rounded-lg text-sm font-semibold text-center focus:outline-none focus:ring-1 focus:ring-white/50 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
@@ -269,8 +265,8 @@ const AttendanceEntry = ({ students, attendanceData, updateAttendance, branches,
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {filteredStudents.map((student) => {
-                  const records = subjects.map(sub => 
-                    attendanceData.find(r => r.studentId === student.id && r.subject === sub && r.month === selectedMonth) || 
+                  const records = subjects.map(sub =>
+                    attendanceData.find(r => r.studentId === student.id && r.subject === sub && r.month === selectedMonth) ||
                     { totalHours: subjectTotalHours[sub] || 40, attendedHours: 0, month: selectedMonth }
                   );
                   const totalAttended = records.reduce((sum, r) => sum + r.attendedHours, 0);
@@ -292,7 +288,7 @@ const AttendanceEntry = ({ students, attendanceData, updateAttendance, branches,
                       </td>
                       {subjects.map((sub, idx) => (
                         <td key={sub} className="px-3 py-4 text-center">
-                          <input 
+                          <input
                             type="number"
                             min="0"
                             max={subjectTotalHours[sub] || 40}
@@ -315,7 +311,7 @@ const AttendanceEntry = ({ students, attendanceData, updateAttendance, branches,
                         </div>
                       </td>
                       <td className="px-4 py-4">
-                        <button 
+                        <button
                           onClick={() => setSelectedStudent(student)}
                           className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
                         >
@@ -338,68 +334,77 @@ const AttendanceEntry = ({ students, attendanceData, updateAttendance, branches,
 
       {/* Side Panel */}
       {selectedStudent && (
-        <div className="fixed right-0 top-0 bottom-0 w-80 bg-white shadow-2xl border-l border-slate-200 p-6 z-50 overflow-y-auto">
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="font-bold text-lg text-slate-800">Student Details</h3>
-            <button onClick={() => setSelectedStudent(null)} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-all">
-              <X size={20} />
-            </button>
-          </div>
+        <div className="fixed inset-0 z-50 flex justify-end">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
+            onClick={() => setSelectedStudent(null)}
+          />
 
-          <div className="text-center mb-6">
-            <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center text-2xl font-bold text-white mx-auto mb-3 shadow-lg">
-              {selectedStudent.name.charAt(0)}
-            </div>
-            <h4 className="font-bold text-lg text-slate-900">{selectedStudent.name}</h4>
-            <p className="text-sm text-slate-600 font-medium">{selectedStudent.rollNo}</p>
-          </div>
-
-          <div className="space-y-4">
-            <div className="bg-slate-50 border border-slate-200 p-4 rounded-lg">
-              <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Branch & Year</label>
-              <p className="font-semibold text-slate-800 mt-1">
-                {selectedStudent.branch} • Year {selectedStudent.year}
-              </p>
+          {/* Panel */}
+          <div className="relative w-full max-w-sm bg-white shadow-2xl border-l border-slate-200 p-6 h-full overflow-y-auto animate-in slide-in-from-right duration-300">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="font-bold text-lg text-slate-800">Student Details</h3>
+              <button onClick={() => setSelectedStudent(null)} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-all">
+                <X size={20} />
+              </button>
             </div>
 
-            <div className="bg-slate-50 border border-slate-200 p-4 rounded-lg">
-              <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Contact</label>
-              <p className="font-semibold text-slate-800 mt-1">{selectedStudent.phone}</p>
-              <p className="text-sm text-slate-600">{selectedStudent.email}</p>
-            </div>
-             
-            <div className="bg-blue-600 text-white p-5 rounded-lg shadow-lg">
-              <div className="flex items-center gap-2 mb-4">
-                <Activity size={18} />
-                <h5 className="font-bold uppercase tracking-wide text-sm">Performance</h5>
+            <div className="text-center mb-6">
+              <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center text-2xl font-bold text-white mx-auto mb-3 shadow-lg">
+                {selectedStudent.name.charAt(0)}
               </div>
-              {(() => {
-                const studentRecords = attendanceData.filter(r => r.studentId === selectedStudent.id);
-                const totalC = studentRecords.reduce((acc, curr) => acc + curr.totalHours, 0);
-                const totalA = studentRecords.reduce((acc, curr) => acc + curr.attendedHours, 0);
-                const overallP = calculatePercentage(totalA, totalC);
-                const n75 = predictHours(totalA, totalC, 0.75);
+              <h4 className="font-bold text-lg text-slate-900">{selectedStudent.name}</h4>
+              <p className="text-sm text-slate-600 font-medium">{selectedStudent.rollNo}</p>
+            </div>
 
-                return (
-                  <div className="space-y-4">
-                    <div className="text-center">
-                      <div className="text-5xl font-bold">{overallP}%</div>
-                      <div className="text-sm font-medium opacity-90 mt-1">Overall Attendance</div>
-                    </div>
+            <div className="space-y-4">
+              <div className="bg-slate-50 border border-slate-200 p-4 rounded-lg">
+                <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Branch & Year</label>
+                <p className="font-semibold text-slate-800 mt-1">
+                  {selectedStudent.branch} • Year {selectedStudent.year}
+                </p>
+              </div>
 
-                    {overallP < 75 && (
-                      <div className="bg-white/20 backdrop-blur-sm p-4 rounded-lg">
-                        <div className="flex items-start gap-2">
-                          <AlertTriangle size={18} className="mt-0.5 flex-shrink-0" />
-                          <div className="text-sm font-medium">
-                            Needs <span className="font-bold text-lg">{n75}</span> more hours to reach 75%
+              <div className="bg-slate-50 border border-slate-200 p-4 rounded-lg">
+                <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Contact</label>
+                <p className="font-semibold text-slate-800 mt-1">{selectedStudent.phone}</p>
+                <p className="text-sm text-slate-600">{selectedStudent.email}</p>
+              </div>
+
+              <div className="bg-blue-600 text-white p-5 rounded-lg shadow-lg">
+                <div className="flex items-center gap-2 mb-4">
+                  <Activity size={18} />
+                  <h5 className="font-bold uppercase tracking-wide text-sm">Performance</h5>
+                </div>
+                {(() => {
+                  const studentRecords = attendanceData.filter(r => r.studentId === selectedStudent.id);
+                  const totalC = studentRecords.reduce((acc, curr) => acc + curr.totalHours, 0);
+                  const totalA = studentRecords.reduce((acc, curr) => acc + curr.attendedHours, 0);
+                  const overallP = calculatePercentage(totalA, totalC);
+                  const n75 = predictHours(totalA, totalC, 0.75);
+
+                  return (
+                    <div className="space-y-4">
+                      <div className="text-center">
+                        <div className="text-5xl font-bold">{overallP}%</div>
+                        <div className="text-sm font-medium opacity-90 mt-1">Overall Attendance</div>
+                      </div>
+
+                      {overallP < 75 && (
+                        <div className="bg-white/20 backdrop-blur-sm p-4 rounded-lg">
+                          <div className="flex items-start gap-2">
+                            <AlertTriangle size={18} className="mt-0.5 flex-shrink-0" />
+                            <div className="text-sm font-medium">
+                              Needs <span className="font-bold text-lg">{n75}</span> more hours to reach 75%
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })()}
+                      )}
+                    </div>
+                  );
+                })()}
+              </div>
             </div>
           </div>
         </div>

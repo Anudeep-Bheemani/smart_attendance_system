@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import { User, Lock, GraduationCap, Activity, TrendingUp, AlertTriangle, Mail, X, Link as LinkIcon, Brain, Sparkles, BarChart3, Shield, Moon, Sun } from 'lucide-react';
 
 const LandingPage = ({ onLogin, onVerify, darkMode, setDarkMode, students }) => {
-  const [activeTab, setActiveTab] = useState('student'); 
+  const [activeTab, setActiveTab] = useState('student');
   const [isVerifying, setIsVerifying] = useState(false);
-  const [verifyStep, setVerifyStep] = useState(1); 
+  const [verifyStep, setVerifyStep] = useState(1);
   const [verifyEmail, setVerifyEmail] = useState('');
   const [verifyRollNo, setVerifyRollNo] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -44,16 +44,16 @@ const LandingPage = ({ onLogin, onVerify, darkMode, setDarkMode, students }) => 
           <button onClick={() => setIsVerifying(false)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
             <X size={20} />
           </button>
-          
+
           <div className="text-center mb-8">
             <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
               {verifyStep === 1 ? <Mail size={32} /> : verifyStep === 2 ? <LinkIcon size={32} /> : <Lock size={32} />}
             </div>
             <h2 className="text-2xl font-bold text-slate-800">Account Verification</h2>
             <p className="text-slate-500 text-sm mt-2">
-              {verifyStep === 1 ? "Enter your details to receive a verification link." : 
-               verifyStep === 2 ? "We've sent a simulated link to your email." : 
-               "Create a secure password for your account."}
+              {verifyStep === 1 ? "Enter your details to receive a verification link." :
+                verifyStep === 2 ? "We've sent a simulated link to your email." :
+                  "Create a secure password for your account."}
             </p>
           </div>
 
@@ -90,8 +90,8 @@ const LandingPage = ({ onLogin, onVerify, darkMode, setDarkMode, students }) => 
                 <div className="bg-blue-50 p-4 rounded-lg text-blue-800 text-sm">
                   <p className="font-bold">Simulated Email Inbox</p>
                   <p>Subject: Verify your SmartAttd Account</p>
-                  <button 
-                    type="button" 
+                  <button
+                    type="button"
                     onClick={() => setVerifyStep(3)}
                     className="mt-2 text-blue-600 underline font-bold"
                   >
@@ -143,12 +143,12 @@ const LandingPage = ({ onLogin, onVerify, darkMode, setDarkMode, students }) => 
       {/* Animated Background Elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-20 left-10 w-72 h-72 bg-blue-500/10 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-20 right-10 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-pulse" style={{animationDelay: '1s'}}></div>
-        <div className="absolute top-1/2 left-1/2 w-64 h-64 bg-cyan-500/10 rounded-full blur-3xl animate-pulse" style={{animationDelay: '2s'}}></div>
+        <div className="absolute bottom-20 right-10 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+        <div className="absolute top-1/2 left-1/2 w-64 h-64 bg-cyan-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }}></div>
       </div>
 
       {/* Left Panel - Hero Section */}
-      <div className="md:w-2/5 p-12 text-white flex flex-col justify-center relative z-10">
+      <div className="w-full md:w-2/5 p-8 md:p-12 text-white flex flex-col justify-center relative z-10 min-h-[50vh] md:min-h-screen">
         <div className="max-w-xl">
           {/* Logo & Title */}
           <div className="flex items-center gap-4 mb-8 group">
@@ -159,7 +159,7 @@ const LandingPage = ({ onLogin, onVerify, darkMode, setDarkMode, students }) => 
               </div>
             </div>
             <div>
-              <h1 className="text-5xl font-black tracking-tight bg-gradient-to-r from-white via-blue-100 to-cyan-200 bg-clip-text text-transparent">
+              <h1 className="text-3xl md:text-5xl font-black tracking-tight bg-gradient-to-r from-white via-blue-100 to-cyan-200 bg-clip-text text-transparent">
                 SmartAttd
               </h1>
               <p className="text-blue-300 text-sm font-semibold tracking-wider">AI-POWERED SYSTEM</p>
@@ -167,18 +167,18 @@ const LandingPage = ({ onLogin, onVerify, darkMode, setDarkMode, students }) => 
           </div>
 
           {/* Tagline */}
-          <h2 className="text-3xl font-bold mb-4 leading-tight">
+          <h2 className="text-2xl md:text-3xl font-bold mb-4 leading-tight">
             Intelligent Attendance
             <span className="block text-transparent bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text">
               Management Platform
             </span>
           </h2>
           <p className="text-blue-200 text-lg mb-10 leading-relaxed">
-            Experience next-generation attendance tracking with real-time analytics, 
+            Experience next-generation attendance tracking with real-time analytics,
             AI-powered predictions, and intelligent risk management.
           </p>
           {/* Feature Cards */}
-          <div className="grid grid-cols-2 gap-4 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
             <div className="group bg-white/5 backdrop-blur-md p-5 rounded-2xl border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all cursor-pointer">
               <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform shadow-lg">
                 <Brain size={24} className="text-white" />
@@ -231,9 +231,9 @@ const LandingPage = ({ onLogin, onVerify, darkMode, setDarkMode, students }) => 
       </div>
 
       {/* Right Panel - Login Form */}
-      <div className="md:w-3/5 flex items-center justify-center p-8 relative z-10">
+      <div className="w-full md:w-3/5 flex items-center justify-center p-4 md:p-8 relative z-10 min-h-[50vh] md:min-h-screen bg-slate-50 md:bg-transparent rounded-t-3xl md:rounded-none -mt-6 md:mt-0">
         <div className="w-full max-w-xl">
-          <div className="bg-white/95 backdrop-blur-xl p-10 rounded-3xl shadow-2xl border border-white/20">
+          <div className="bg-white/95 backdrop-blur-xl p-6 md:p-10 rounded-3xl shadow-2xl border border-white/20">
             <div className="text-center mb-8">
               <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl mb-4 shadow-lg">
                 <Sparkles size={32} className="text-white" />
@@ -248,11 +248,10 @@ const LandingPage = ({ onLogin, onVerify, darkMode, setDarkMode, students }) => 
                 <button
                   key={role}
                   onClick={() => setActiveTab(role)}
-                  className={`capitalize text-xs py-2.5 rounded-lg font-bold transition-all ${
-                    activeTab === role 
-                      ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg scale-105' 
+                  className={`capitalize text-xs py-2.5 rounded-lg font-bold transition-all ${activeTab === role
+                      ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg scale-105'
                       : 'text-slate-500 hover:text-slate-700 hover:bg-white'
-                  }`}
+                    }`}
                 >
                   {role}
                 </button>
@@ -273,7 +272,7 @@ const LandingPage = ({ onLogin, onVerify, darkMode, setDarkMode, students }) => 
                     className="relative w-full pl-12 pr-4 py-3 border-2 border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all bg-white"
                     placeholder={activeTab === 'student' ? '24CSE101' : 'user@college.edu'}
                     value={formData.id}
-                    onChange={(e) => setFormData({...formData, id: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, id: e.target.value })}
                   />
                 </div>
               </div>
@@ -289,7 +288,7 @@ const LandingPage = ({ onLogin, onVerify, darkMode, setDarkMode, students }) => 
                     className="relative w-full pl-12 pr-4 py-3 border-2 border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all bg-white"
                     placeholder="••••••••"
                     value={formData.password}
-                    onChange={(e) => setFormData({...formData, password: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                   />
                 </div>
               </div>
@@ -307,7 +306,7 @@ const LandingPage = ({ onLogin, onVerify, darkMode, setDarkMode, students }) => 
             {activeTab === 'student' && (
               <div className="mt-6 text-center pt-6 border-t border-slate-200">
                 <p className="text-sm text-slate-500 mb-3">New Student?</p>
-                <button 
+                <button
                   onClick={() => setIsVerifying(true)}
                   className="text-blue-600 font-bold hover:text-purple-600 text-sm transition-colors"
                 >

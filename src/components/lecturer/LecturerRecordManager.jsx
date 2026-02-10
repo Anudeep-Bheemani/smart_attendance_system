@@ -24,7 +24,7 @@ const LecturerRecordManager = ({ students, setStudents, branches, setBranches })
   const filteredStudents = students.filter(s => {
     const branchMatch = filterBranch === 'all' || s.branch === filterBranch;
     const yearMatch = filterYear === 'all' || s.year === parseInt(filterYear);
-    const searchMatch = !searchQuery || 
+    const searchMatch = !searchQuery ||
       s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       s.rollNo.toLowerCase().includes(searchQuery.toLowerCase()) ||
       s.email.toLowerCase().includes(searchQuery.toLowerCase());
@@ -93,57 +93,61 @@ const LecturerRecordManager = ({ students, setStudents, branches, setBranches })
 
       {activeTab === 'students' ? (
         <div className="space-y-6">
-          <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex justify-between items-center">
+          <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
             <div>
               <h3 className="font-bold text-slate-800 text-xl">Student Records</h3>
               <p className="text-slate-500 text-sm mt-1">Manage student information</p>
             </div>
-            <div className="flex gap-2 items-center">
-              <div className="relative">
+            <div className="flex flex-col sm:flex-row flex-wrap gap-2 items-stretch sm:items-center w-full lg:w-auto">
+              <div className="relative w-full sm:w-auto">
                 <Search className="absolute left-3 top-2.5 text-slate-400" size={18} />
                 <input
                   type="text"
-                  placeholder="Search by name, roll no, or email..."
-                  className="pl-10 pr-4 py-2 border border-slate-300 rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none bg-white min-w-[250px]"
+                  placeholder="Search..."
+                  className="pl-10 pr-4 py-2 border border-slate-300 rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none bg-white w-full sm:w-[200px] lg:w-[250px]"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
-              <select
-                className="px-3 py-2 border border-slate-300 rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none bg-white"
-                value={filterBranch}
-                onChange={(e) => setFilterBranch(e.target.value)}
-              >
-                <option value="all">All Branches</option>
-                {branches.map(branch => (
-                  <option key={branch} value={branch}>{branch}</option>
-                ))}
-              </select>
-              <select
-                className="px-3 py-2 border border-slate-300 rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none bg-white"
-                value={filterYear}
-                onChange={(e) => setFilterYear(e.target.value)}
-              >
-                <option value="all">All Years</option>
-                <option value="1">1st Year</option>
-                <option value="2">2nd Year</option>
-                <option value="3">3rd Year</option>
-                <option value="4">4th Year</option>
-              </select>
-              <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors text-sm">
-                Go
-              </button>
-              <button
-                onClick={handleAdd}
-                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg font-medium shadow-md transition-colors"
-              >
-                <Plus size={18} />
-                Add Student
-              </button>
+              <div className="flex gap-2 w-full sm:w-auto">
+                <select
+                  className="flex-1 sm:flex-none px-3 py-2 border border-slate-300 rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none bg-white"
+                  value={filterBranch}
+                  onChange={(e) => setFilterBranch(e.target.value)}
+                >
+                  <option value="all">Branch: All</option>
+                  {branches.map(branch => (
+                    <option key={branch} value={branch}>{branch}</option>
+                  ))}
+                </select>
+                <select
+                  className="flex-1 sm:flex-none px-3 py-2 border border-slate-300 rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none bg-white"
+                  value={filterYear}
+                  onChange={(e) => setFilterYear(e.target.value)}
+                >
+                  <option value="all">Year: All</option>
+                  <option value="1">1st</option>
+                  <option value="2">2nd</option>
+                  <option value="3">3rd</option>
+                  <option value="4">4th</option>
+                </select>
+              </div>
+              <div className="flex gap-2 w-full sm:w-auto">
+                <button className="flex-1 sm:flex-none px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors text-sm">
+                  Go
+                </button>
+                <button
+                  onClick={handleAdd}
+                  className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg font-medium shadow-md transition-colors whitespace-nowrap"
+                >
+                  <Plus size={18} />
+                  Add Student
+                </button>
+              </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden overflow-x-auto">
             <table className="w-full text-sm text-left">
               <thead className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200">
                 <tr>
@@ -160,43 +164,43 @@ const LecturerRecordManager = ({ students, setStudents, branches, setBranches })
                 {filteredStudents.length > 0 ? (
                   filteredStudents.map(s => (
                     <tr key={s.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-6 py-4 font-mono text-slate-600 font-medium">{s.rollNo}</td>
-                    <td className="px-6 py-4 font-medium text-slate-800">{s.name}</td>
-                    <td className="px-6 py-4">
-                      <span className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs font-medium">
-                        {s.branch}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-slate-600">Year {s.year}</td>
-                    <td className="px-6 py-4 text-slate-600">{s.email}</td>
-                    <td className="px-6 py-4">
-                      {s.verified ? (
-                        <span className="text-green-600 flex items-center gap-1">
-                          <CheckCircle size={14}/> Yes
+                      <td className="px-6 py-4 font-mono text-slate-600 font-medium">{s.rollNo}</td>
+                      <td className="px-6 py-4 font-medium text-slate-800">{s.name}</td>
+                      <td className="px-6 py-4">
+                        <span className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs font-medium">
+                          {s.branch}
                         </span>
-                      ) : (
-                        <span className="text-orange-500">Pending</span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex justify-end gap-2">
-                        <button
-                          onClick={() => handleEdit(s)}
-                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                          title="Edit"
-                        >
-                          <Edit3 size={16} />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(s.id)}
-                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                          title="Delete"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
+                      </td>
+                      <td className="px-6 py-4 text-slate-600">Year {s.year}</td>
+                      <td className="px-6 py-4 text-slate-600">{s.email}</td>
+                      <td className="px-6 py-4">
+                        {s.verified ? (
+                          <span className="text-green-600 flex items-center gap-1">
+                            <CheckCircle size={14} /> Yes
+                          </span>
+                        ) : (
+                          <span className="text-orange-500">Pending</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex justify-end gap-2">
+                          <button
+                            onClick={() => handleEdit(s)}
+                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                            title="Edit"
+                          >
+                            <Edit3 size={16} />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(s.id)}
+                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Delete"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
                   ))
                 ) : (
                   <tr>
