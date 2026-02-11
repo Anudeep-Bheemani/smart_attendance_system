@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Plus, Edit3, Trash2, Search, Filter, User, Mail, Lock, GraduationCap, Users } from 'lucide-react';
 
-const AdminStaffManager = ({ staffList, setStaffList }) => {
+const AdminStaffManager = ({ staffList, setStaffList, branches }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [currentStaff, setCurrentStaff] = useState({ 
     name: '', 
@@ -14,7 +14,7 @@ const AdminStaffManager = ({ staffList, setStaffList }) => {
   const [yearFilter, setYearFilter] = useState('all');
   const [branchFilter, setBranchFilter] = useState('all');
 
-  const branches = ['CSE', 'ECE', 'MECH', 'CIVIL', 'EEE'];
+
   const academicYears = ['1st Year', '2nd Year', '3rd Year', '4th Year'];
 
   // Generate assigned class from branch + year

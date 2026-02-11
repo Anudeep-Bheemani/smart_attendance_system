@@ -149,7 +149,7 @@ const MainApp = () => {
     switch (currentUser.role) {
       case 'admin':
         if (activeView === 'student-management') return <AdminStudentManagement students={students} setStudents={setStudents} branches={branches} />;
-        if (activeView === 'staff-management') return <AdminStaffManager staffList={staffList} setStaffList={setStaffList} />;
+        if (activeView === 'staff-management') return <AdminStaffManager staffList={staffList} setStaffList={setStaffList} branches={branches} />;
         if (activeView === 'branch-management') return <AdminBranchManager branches={branches} setBranches={setBranches} />;
         if (activeView === 'subject-management') return <SubjectManager subjects={subjects} setSubjects={setSubjects} branches={branches} />;
         if (activeView === 'reports') return (
