@@ -9,6 +9,7 @@ import { downloadExcel, downloadPDF } from '../../utils/downloadReport';
 const AdminDashboard = ({ students, attendanceData, staffList }) => {
   const [selectedYear, setSelectedYear] = useState('all');
   const [selectedBranch, setSelectedBranch] = useState('all');
+  const [selectedSemester, setSelectedSemester] = useState('all');
   const [selectedMonth, setSelectedMonth] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortConfig, setSortConfig] = useState({ key: 'rollNo', direction: 'asc' });
@@ -20,7 +21,8 @@ const AdminDashboard = ({ students, attendanceData, staffList }) => {
     return students.map(s => {
       const records = attendanceData.filter(r => {
         const monthMatch = selectedMonth === 'all' || r.month === selectedMonth;
-        return r.studentId === s.id && monthMatch;
+        const semMatch = selectedSemester === 'all' || r.semester === parseInt(selectedSemester);
+        return r.studentId === s.id && monthMatch && semMatch;
       });
       if (records.length === 0) return { ...s, percentage: 0, totalHours: 0, attendedHours: 0, trend: 0 };
       
@@ -388,7 +390,16 @@ const AdminDashboard = ({ students, attendanceData, staffList }) => {
           <span>Filters</span>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
-          <select 
+          <select
+            className="px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm font-medium"
+            value={selectedSemester}
+            onChange={(e) => setSelectedSemester(e.target.value)}
+          >
+            <option value="all">All Sems</option>
+            <option value="1">Sem 1</option>
+            <option value="2">Sem 2</option>
+          </select>
+          <select
             className="px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm font-medium"
             value={selectedMonth}
             onChange={(e) => setSelectedMonth(e.target.value)}

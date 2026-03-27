@@ -1,129 +1,208 @@
-import React, { useState } from 'react';
-import { User, Lock, GraduationCap, Activity, TrendingUp, AlertTriangle, Mail, X, Link as LinkIcon, Brain, Sparkles, BarChart3, Shield, Moon, Sun } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { User, Lock, GraduationCap, AlertTriangle, Mail, X, Brain, Sparkles, BarChart3, Shield, Moon, Sun, Loader2, CheckCircle } from 'lucide-react';
+import { api } from '../../api';
 
-const LandingPage = ({ onLogin, onVerify, darkMode, setDarkMode, students }) => {
-  const [activeTab, setActiveTab] = useState('student'); 
+const LandingPage = ({ onLogin, onVerify, darkMode, setDarkMode, verifyToken, onTokenUsed }) => {
+  const [activeTab, setActiveTab] = useState('student');
   const [isVerifying, setIsVerifying] = useState(false);
-  const [verifyStep, setVerifyStep] = useState(1); 
+  // Token-based flow state
+  const [tokenStudent, setTokenStudent] = useState(null);   // { name, email, rollNo }
+  const [tokenLoading, setTokenLoading] = useState(false);
+  const [tokenError, setTokenError] = useState('');
+  const [tokenPassword, setTokenPassword] = useState('');
+  const [tokenConfirm, setTokenConfirm] = useState('');
+  const [tokenDone, setTokenDone] = useState(false);
+  // Manual flow state
+  const [verifyStep, setVerifyStep] = useState(1);
   const [verifyEmail, setVerifyEmail] = useState('');
   const [verifyRollNo, setVerifyRollNo] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [formData, setFormData] = useState({ id: '', password: '' });
   const [error, setError] = useState('');
-  const handleSubmit = (e) => {
+
+  // On mount: if a token is present, resolve it immediately
+  useEffect(() => {
+    if (!verifyToken) return;
+    setTokenLoading(true);
+    api.getStudentByToken(verifyToken)
+      .then(student => { setTokenStudent(student); setTokenLoading(false); })
+      .catch(err => { setTokenError(err.message || 'Invalid or expired link.'); setTokenLoading(false); });
+  }, [verifyToken]);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    onLogin(activeTab, formData);
-  };
-  const handleVerifySubmit = (e) => {
-    e.preventDefault();
-    if (verifyStep === 1) {
-      const student = students.find(s => s.rollNo === verifyRollNo && s.email === verifyEmail);
-      if (!student) {
-        alert('Student not found. Please contact admin to add you first.');
-        return;
-      }
-      if (student.verified) {
-        alert('Account already verified. Please login.');
-        return;
-      }
-      setVerifyStep(2);
-    } else if (verifyStep === 3) {
-      onVerify(verifyEmail, newPassword);
-      setIsVerifying(false);
-      setVerifyStep(1);
-      setVerifyEmail('');
-      setVerifyRollNo('');
-      setNewPassword('');
-      alert("Account verified! You can now login.");
+    setError('');
+    try {
+      await onLogin(activeTab, formData);
+    } catch (err) {
+      setError('Invalid credentials. Please try again.');
     }
   };
+
+  // ── Token-based set-password screen ────────────────────────────────────────
+  if (verifyToken) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
+        <div className="w-full max-w-md bg-white p-8 rounded-2xl shadow-xl border border-slate-100">
+          <div className="text-center mb-8">
+            <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${tokenDone ? 'bg-green-100' : 'bg-blue-100'}`}>
+              {tokenLoading ? <Loader2 size={32} className="text-blue-600 animate-spin" /> :
+               tokenDone ? <CheckCircle size={32} className="text-green-600" /> :
+               tokenError ? <AlertTriangle size={32} className="text-red-500" /> :
+               <Lock size={32} className="text-blue-600" />}
+            </div>
+            <h2 className="text-2xl font-bold text-slate-800">
+              {tokenLoading ? 'Verifying link...' :
+               tokenDone ? 'Account Activated!' :
+               tokenError ? 'Link Invalid' :
+               `Welcome, ${tokenStudent?.name}`}
+            </h2>
+            <p className="text-slate-500 text-sm mt-2">
+              {tokenLoading ? 'Please wait...' :
+               tokenDone ? 'You can now login with your new password.' :
+               tokenError ? tokenError :
+               `Set a password for your account · ${tokenStudent?.rollNo}`}
+            </p>
+          </div>
+
+          {!tokenLoading && !tokenError && !tokenDone && tokenStudent && (
+            <form onSubmit={async (e) => {
+              e.preventDefault();
+              if (tokenPassword.length < 6) { alert('Password must be at least 6 characters.'); return; }
+              if (tokenPassword !== tokenConfirm) { alert('Passwords do not match.'); return; }
+              try {
+                await api.verifyStudentByToken(verifyToken, tokenPassword);
+                setTokenDone(true);
+                onTokenUsed();
+              } catch (err) {
+                alert(err.message || 'Failed to set password. Please try again.');
+              }
+            }} className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">New Password</label>
+                <input
+                  type="password"
+                  required
+                  minLength={6}
+                  className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  value={tokenPassword}
+                  onChange={(e) => setTokenPassword(e.target.value)}
+                  placeholder="At least 6 characters"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">Confirm Password</label>
+                <input
+                  type="password"
+                  required
+                  className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  value={tokenConfirm}
+                  onChange={(e) => setTokenConfirm(e.target.value)}
+                  placeholder="Re-enter password"
+                />
+              </div>
+              <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-lg transition-colors shadow-lg">
+                Activate Account →
+              </button>
+            </form>
+          )}
+
+          {tokenDone && (
+            <button
+              onClick={onTokenUsed}
+              className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 rounded-lg transition-colors shadow-lg"
+            >
+              Go to Login →
+            </button>
+          )}
+
+          {tokenError && (
+            <button
+              onClick={onTokenUsed}
+              className="w-full mt-4 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-2.5 rounded-lg transition-colors"
+            >
+              Back to Login
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // ── Manual verify flow (fallback) ───────────────────────────────────────────
+  const handleVerifySubmit = async (e) => {
+    e.preventDefault();
+    if (verifyStep === 1) {
+      try {
+        const result = await api.checkStudent(verifyRollNo, verifyEmail);
+        if (!result.exists) { alert('Student not found. Please contact admin to add you first.'); return; }
+        if (result.verified) { alert('Account already verified. Please login.'); return; }
+        setVerifyStep(2);
+      } catch (err) {
+        alert('Could not verify student. Please try again.');
+      }
+    } else {
+      try {
+        await onVerify(verifyEmail, newPassword);
+        setIsVerifying(false);
+        setVerifyStep(1);
+        setVerifyEmail('');
+        setVerifyRollNo('');
+        setNewPassword('');
+        alert('Account activated! You can now login.');
+      } catch (err) {
+        alert('Verification failed. Please try again.');
+      }
+    }
+  };
+
   if (isVerifying) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
         <div className="w-full max-w-md bg-white p-8 rounded-2xl shadow-xl border border-slate-100 relative">
-          <button onClick={() => setIsVerifying(false)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
+          <button onClick={() => { setIsVerifying(false); setVerifyStep(1); }} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
             <X size={20} />
           </button>
-          
           <div className="text-center mb-8">
             <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
-              {verifyStep === 1 ? <Mail size={32} /> : verifyStep === 2 ? <LinkIcon size={32} /> : <Lock size={32} />}
+              {verifyStep === 1 ? <Mail size={32} /> : <Lock size={32} />}
             </div>
             <h2 className="text-2xl font-bold text-slate-800">Account Verification</h2>
             <p className="text-slate-500 text-sm mt-2">
-              {verifyStep === 1 ? "Enter your details to receive a verification link." : 
-               verifyStep === 2 ? "We've sent a simulated link to your email." : 
-               "Create a secure password for your account."}
+              {verifyStep === 1
+                ? 'Enter your roll number and email to get a verification link sent to your inbox.'
+                : 'Set a new password to activate your account.'}
             </p>
           </div>
+
+          {verifyStep === 1 && (
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4 text-amber-800 text-sm">
+              <strong>Tip:</strong> If you received a verification email, just click the link in that email instead.
+            </div>
+          )}
 
           <form onSubmit={handleVerifySubmit} className="space-y-4">
             {verifyStep === 1 && (
               <>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Roll Number</label>
-                  <input
-                    type="text"
-                    required
-                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                    value={verifyRollNo}
-                    onChange={(e) => setVerifyRollNo(e.target.value)}
-                    placeholder="24CSE101"
-                  />
+                  <label className="block text-sm font-semibold text-slate-700 mb-1">Roll Number</label>
+                  <input type="text" required className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" value={verifyRollNo} onChange={(e) => setVerifyRollNo(e.target.value)} placeholder="24CSE101" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Email Address</label>
-                  <input
-                    type="email"
-                    required
-                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                    value={verifyEmail}
-                    onChange={(e) => setVerifyEmail(e.target.value)}
-                    placeholder="student@college.edu"
-                  />
+                  <label className="block text-sm font-semibold text-slate-700 mb-1">Email Address</label>
+                  <input type="email" required className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" value={verifyEmail} onChange={(e) => setVerifyEmail(e.target.value)} placeholder="student@college.edu" />
                 </div>
               </>
             )}
-
             {verifyStep === 2 && (
-              <div className="text-center space-y-4">
-                <div className="bg-blue-50 p-4 rounded-lg text-blue-800 text-sm">
-                  <p className="font-bold">Simulated Email Inbox</p>
-                  <p>Subject: Verify your SmartAttd Account</p>
-                  <button 
-                    type="button" 
-                    onClick={() => setVerifyStep(3)}
-                    className="mt-2 text-blue-600 underline font-bold"
-                  >
-                    [Click here to Verify]
-                  </button>
-                </div>
-                <p className="text-xs text-slate-400">In a real app, this link would be in your Gmail.</p>
-              </div>
-            )}
-
-            {verifyStep === 3 && (
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Set New Password</label>
-                <input
-                  type="password"
-                  required
-                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="••••••••"
-                />
+                <label className="block text-sm font-semibold text-slate-700 mb-1">New Password</label>
+                <input type="password" required className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="••••••••" />
               </div>
             )}
-
-            {verifyStep !== 2 && (
-              <button
-                type="submit"
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-lg transition-colors shadow-lg"
-              >
-                {verifyStep === 1 ? "Send Link" : "Activate Account"}
-              </button>
-            )}
+            <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-lg transition-colors shadow-lg">
+              {verifyStep === 1 ? 'Check Account →' : 'Activate Account →'}
+            </button>
           </form>
         </div>
       </div>
@@ -318,7 +397,7 @@ const LandingPage = ({ onLogin, onVerify, darkMode, setDarkMode, students }) => 
 
             <div className="mt-6 text-center text-xs text-slate-400 bg-slate-50 p-3 rounded-lg">
               <p className="font-semibold mb-1">Demo Credentials:</p>
-              <p>Student: 24CSE100/pass | Staff: alan@college.edu/pass | Admin: admin@college.edu/admin</p>
+              <p>Student: 24CSE101/pass | Staff: alan@college.edu/pass | Admin: admin@college.edu/admin</p>
             </div>
           </div>
         </div>

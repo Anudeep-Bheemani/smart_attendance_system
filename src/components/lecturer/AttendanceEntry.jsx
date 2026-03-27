@@ -1,24 +1,41 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, BookOpen, Save, Loader2, Eye, X, Filter, Activity, AlertTriangle, Search } from 'lucide-react';
-import { SUBJECTS, INITIAL_BRANCHES } from '../../constants';
 import { calculatePercentage, predictHours } from '../../utils';
 import RiskBadge from '../common/RiskBadge';
 
-const AttendanceEntry = ({ students, attendanceData, updateAttendance, branches, subjects: subjectsFromProps }) => {
-  const [selectedYear, setSelectedYear] = useState("1"); 
-  const [selectedBranch, setSelectedBranch] = useState("CSE");
-  const [selectedMonth, setSelectedMonth] = useState("October");
-  const [selectedAcademicYear, setSelectedAcademicYear] = useState("2024");
+// June(6)-Dec(12) = Sem 1 | Jan(1)-May(5) = Sem 2
+const getAutoSemester = () => {
+  const month = new Date().getMonth() + 1;
+  return month >= 6 ? 1 : 2;
+};
+
+const SEM_MONTHS = {
+  1: ["June", "July", "August", "September", "October", "November", "December"],
+  2: ["January", "February", "March", "April", "May"]
+};
+
+const AttendanceEntry = ({ user, students, attendanceData, updateAttendance, branches, subjects: subjectsFromProps }) => {
+  const [selectedYear, setSelectedYear] = useState(user?.academicYear?.toString() || "1");
+  const [selectedBranch, setSelectedBranch] = useState(user?.branch || "CSE");
+  const [selectedSemester, setSelectedSemester] = useState(getAutoSemester());
+  const [selectedMonth, setSelectedMonth] = useState(() => {
+    const auto = getAutoSemester();
+    return SEM_MONTHS[auto][0];
+  });
+  const [selectedAcademicYear, setSelectedAcademicYear] = useState(new Date().getFullYear().toString());
   const [search, setSearch] = useState("");
-  const [selectedStudent, setSelectedStudent] = useState(null); 
-  const [subjectTotalHours, setSubjectTotalHours] = useState({}); 
+  const [selectedStudent, setSelectedStudent] = useState(null);
+  const [subjectTotalHours, setSubjectTotalHours] = useState({});
   const [isSaving, setIsSaving] = useState(false);
   const [attendanceFilter, setAttendanceFilter] = useState('all');
 
-  const branchOptions = branches || INITIAL_BRANCHES;
-  const subjects = subjectsFromProps?.[selectedBranch]?.[selectedYear] || SUBJECTS[selectedBranch]?.[selectedYear] || [];
+  const branchOptions = branches || [];
+  const subjects = subjectsFromProps?.[selectedBranch]?.[selectedYear]?.[selectedSemester] || [];
 
-  const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+  // When semester changes, reset month to first month of that semester
+  const handleSemesterChange = (sem) => {
+    setSelectedSemester(sem);
+  };
 
   const classStudents = students.filter(s => s.branch === selectedBranch && s.year === parseInt(selectedYear));
   
@@ -79,15 +96,14 @@ const AttendanceEntry = ({ students, attendanceData, updateAttendance, branches,
       alert(`Cannot exceed ${maxHours} hours for ${subject}`);
       return;
     }
-    updateAttendance(studentId, subject, field, numValue, selectedMonth);
+    updateAttendance(studentId, subject, field, numValue, selectedMonth, selectedSemester);
   };
 
   const handleSubjectTotalChange = (subject, value) => {
     const newVal = parseInt(value) || 0;
     setSubjectTotalHours(prev => ({ ...prev, [subject]: newVal }));
-    
     filteredStudents.forEach(student => {
-      updateAttendance(student.id, subject, 'totalHours', newVal, selectedMonth);
+      updateAttendance(student.id, subject, 'totalHours', newVal, selectedMonth, selectedSemester);
     });
   };
 
@@ -110,7 +126,7 @@ const AttendanceEntry = ({ students, attendanceData, updateAttendance, branches,
             </div>
             <div>
               <h1 className="text-xl font-bold text-slate-800">Attendance Entry</h1>
-              <p className="text-sm text-slate-600">{selectedMonth} {selectedAcademicYear} • {selectedBranch} Year {selectedYear}</p>
+              <p className="text-sm text-slate-600">{selectedMonth} {selectedAcademicYear} • {selectedBranch} Year {selectedYear} • Sem {selectedSemester}</p>
             </div>
           </div>
           <button 
@@ -123,33 +139,57 @@ const AttendanceEntry = ({ students, attendanceData, updateAttendance, branches,
           </button>
         </div>
 
+        {/* Semester selector — auto-detected, manually overridable */}
+        <div className="flex items-center gap-3 mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+          <span className="text-xs font-bold text-blue-700 uppercase tracking-wide">Semester:</span>
+          {[1, 2].map(s => (
+            <button
+              key={s}
+              type="button"
+              onClick={() => handleSemesterChange(s)}
+              className={`px-5 py-1.5 rounded-full text-sm font-bold transition-all ${
+                selectedSemester === s
+                  ? 'bg-blue-600 text-white shadow'
+                  : 'bg-white text-blue-600 border border-blue-300 hover:bg-blue-100'
+              }`}
+            >
+              Sem {s} {s === getAutoSemester() ? '(current)' : ''}
+            </button>
+          ))}
+          <span className="text-xs text-blue-500 ml-1">Auto-detected from today's month</span>
+        </div>
+
         {/* Filters */}
-        <div className="grid grid-cols-6 gap-4 mb-5">
+        <div className="grid grid-cols-5 gap-4 mb-5">
           <div>
             <label className="text-xs font-semibold text-slate-600 mb-1.5 block">Month</label>
-            <select 
+            <select
               className="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
               value={selectedMonth}
-              onChange={(e) => setSelectedMonth(e.target.value)}
+              onChange={(e) => {
+                const m = e.target.value;
+                setSelectedMonth(m);
+                setSelectedSemester(SEM_MONTHS[1].includes(m) ? 1 : 2);
+              }}
             >
-              {months.map(m => <option key={m} value={m}>{m}</option>)}
+              {[...SEM_MONTHS[1], ...SEM_MONTHS[2]].map(m => <option key={m} value={m}>{m}</option>)}
             </select>
           </div>
 
           <div>
             <label className="text-xs font-semibold text-slate-600 mb-1.5 block">Academic Year</label>
-            <input 
+            <input
               type="text"
               className="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
               value={selectedAcademicYear}
               onChange={(e) => setSelectedAcademicYear(e.target.value)}
-              placeholder="2024"
+              placeholder="2025"
             />
           </div>
 
           <div>
             <label className="text-xs font-semibold text-slate-600 mb-1.5 block">Class Year</label>
-            <select 
+            <select
               className="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
               value={selectedYear}
               onChange={(e) => setSelectedYear(e.target.value)}
@@ -163,7 +203,7 @@ const AttendanceEntry = ({ students, attendanceData, updateAttendance, branches,
 
           <div>
             <label className="text-xs font-semibold text-slate-600 mb-1.5 block">Branch</label>
-            <select 
+            <select
               className="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
               value={selectedBranch}
               onChange={(e) => setSelectedBranch(e.target.value)}
@@ -176,9 +216,9 @@ const AttendanceEntry = ({ students, attendanceData, updateAttendance, branches,
             <label className="text-xs font-semibold text-slate-600 mb-1.5 block">Search</label>
             <div className="relative">
               <Search className="absolute left-3 top-3 text-slate-400" size={16} />
-              <input 
-                type="text" 
-                placeholder="Name or Roll..." 
+              <input
+                type="text"
+                placeholder="Name or Roll..."
                 className="w-full pl-9 pr-3 py-2.5 bg-white border border-slate-300 rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
@@ -270,7 +310,7 @@ const AttendanceEntry = ({ students, attendanceData, updateAttendance, branches,
               <tbody className="divide-y divide-slate-100">
                 {filteredStudents.map((student) => {
                   const records = subjects.map(sub => 
-                    attendanceData.find(r => r.studentId === student.id && r.subject === sub && r.month === selectedMonth) || 
+                    attendanceData.find(r => r.studentId === student.id && r.subject === sub && r.month === selectedMonth && r.semester === selectedSemester) || 
                     { totalHours: subjectTotalHours[sub] || 40, attendedHours: 0, month: selectedMonth }
                   );
                   const totalAttended = records.reduce((sum, r) => sum + r.attendedHours, 0);

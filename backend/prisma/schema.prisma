@@ -1,0 +1,79 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Student {
+  id            String       @id
+  role          String       @default("student")
+  name          String
+  email         String       @unique
+  password      String
+  rollNo        String       @unique
+  branch        String
+  year          Int
+  dob           String?
+  phone         String?
+  guardianName  String?
+  guardianPhone String?
+  photo         String?
+  verified           Boolean      @default(false)
+  verificationToken  String?      @unique
+  createdAt          DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  attendance    Attendance[]
+}
+
+model Staff {
+  id            String   @id
+  role          String   @default("lecturer")
+  name          String
+  email         String   @unique
+  password      String
+  subjects      String[]
+  branch        String?
+  academicYear  String?
+  assignedClass String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Admin {
+  id       String @id
+  role     String @default("admin")
+  name     String
+  email    String @unique
+  password String
+}
+
+model Branch {
+  name      String   @id
+  createdAt DateTime @default(now())
+}
+
+model SubjectConfig {
+  id        Int      @id @default(autoincrement())
+  data      Json
+  updatedAt DateTime @updatedAt
+}
+
+model Attendance {
+  id            String   @id @default(cuid())
+  studentId     String
+  studentName   String
+  rollNo        String
+  subject       String
+  month         String
+  semester      Int      @default(1)
+  totalHours    Int      @default(40)
+  attendedHours Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  student       Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, subject, month, semester])
+}

@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Plus, Edit3, Trash2, Search, Filter, Mail, Phone, User, Calendar, Layers, X, Save } from 'lucide-react';
 
-const AdminStudentManagement = ({ students, setStudents, branches }) => {
+const AdminStudentManagement = ({ students, branches, onAddStudent, onUpdateStudent, onDeleteStudent }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [branchFilter, setBranchFilter] = useState('all');
   const [yearFilter, setYearFilter] = useState('all');
@@ -63,26 +63,28 @@ const AdminStudentManagement = ({ students, setStudents, branches }) => {
     setShowModal(true);
   };
 
-  const handleSave = () => {
-    if (editMode) {
-      setStudents(prev => prev.map(s => s.id === currentStudent.id ? currentStudent : s));
-    } else {
-      setStudents(prev => [...prev, {
-        ...currentStudent,
-        id: `S${Date.now()}`,
-        role: 'student',
-        password: 'pass',
-        verified: false
-      }]);
+  const handleSave = async () => {
+    try {
+      if (editMode) {
+        await onUpdateStudent(currentStudent.id, currentStudent);
+      } else {
+        await onAddStudent(currentStudent);
+      }
+      setShowModal(false);
+      alert(editMode ? 'Student updated successfully!' : 'Student added successfully!');
+    } catch (err) {
+      // error already alerted in App.jsx
     }
-    setShowModal(false);
-    alert(editMode ? 'Student updated successfully!' : 'Student added successfully!');
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this student?')) {
-      setStudents(prev => prev.filter(s => s.id !== id));
-      alert('Student deleted successfully!');
+      try {
+        await onDeleteStudent(id);
+        alert('Student deleted successfully!');
+      } catch (err) {
+        // error already alerted in App.jsx
+      }
     }
   };
 

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Plus, Edit3, Trash2, Search, Filter, User, Mail, Lock, GraduationCap, Users } from 'lucide-react';
 
-const AdminStaffManager = ({ staffList, setStaffList }) => {
+const AdminStaffManager = ({ staffList, onAddStaff, onUpdateStaff, onDeleteStaff }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [currentStaff, setCurrentStaff] = useState({ 
     name: '', 
@@ -23,7 +23,7 @@ const AdminStaffManager = ({ staffList, setStaffList }) => {
     return `${branch}-${yearMap[year]}`;
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!currentStaff.name || !currentStaff.email || !currentStaff.password) {
       alert('Please fill all required fields');
       return;
@@ -43,20 +43,19 @@ const AdminStaffManager = ({ staffList, setStaffList }) => {
 
     const staffData = { ...currentStaff, assignedClass };
 
-    if (isEditing) {
-      setStaffList(prev => prev.map(s => s.id === currentStaff.id ? staffData : s));
-      alert('Staff updated successfully!');
-    } else {
-      setStaffList(prev => [...prev, { 
-        ...staffData, 
-        id: Date.now(), 
-        role: 'lecturer'
-      }]);
-      alert('Staff account created successfully!');
+    try {
+      if (isEditing) {
+        await onUpdateStaff(currentStaff.id, staffData);
+        alert('Staff updated successfully!');
+      } else {
+        await onAddStaff({ ...staffData, role: 'lecturer' });
+        alert('Staff account created successfully!');
+      }
+      setIsEditing(false);
+      setCurrentStaff({ name: '', email: '', password: '', branch: 'CSE', academicYear: '1st Year' });
+    } catch (err) {
+      // error already alerted in App.jsx
     }
-    
-    setIsEditing(false);
-    setCurrentStaff({ name: '', email: '', password: '', branch: 'CSE', academicYear: '1st Year' });
   };
 
   const handleEdit = (staff) => {
@@ -64,10 +63,14 @@ const AdminStaffManager = ({ staffList, setStaffList }) => {
     setCurrentStaff(staff);
   };
 
-  const handleDelete = (id) => {
-    if(window.confirm('Delete this staff member?')) {
-      setStaffList(prev => prev.filter(s => s.id !== id));
-      alert('Staff deleted successfully!');
+  const handleDelete = async (id) => {
+    if (window.confirm('Delete this staff member?')) {
+      try {
+        await onDeleteStaff(id);
+        alert('Staff deleted successfully!');
+      } catch (err) {
+        // error already alerted in App.jsx
+      }
     }
   };
 

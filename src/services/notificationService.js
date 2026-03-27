@@ -25,7 +25,7 @@ SmartAttd System
   };
 };
 
-export const sendAttendanceReportToStudent = (student, attendanceData) => {
+export const sendAttendanceReportToStudent = (student, attendanceData, periodLabel) => {
   const avgAttendance = attendanceData.reduce((acc, curr) => 
     acc + (curr.attendedHours / curr.totalHours * 100), 0) / attendanceData.length;
   
@@ -33,11 +33,11 @@ export const sendAttendanceReportToStudent = (student, attendanceData) => {
 📧 EMAIL SENT TO STUDENT
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 To: ${student.email}
-Subject: Monthly Attendance Report - ${new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+Subject: Attendance Report — ${periodLabel}
 
 Dear ${student.name},
 
-Your attendance report for this month:
+Your attendance report for ${periodLabel}:
 
 Overall Attendance: ${avgAttendance.toFixed(1)}%
 Status: ${avgAttendance >= 75 ? '✅ Safe' : avgAttendance >= 65 ? '⚠️ Warning' : '❌ Critical'}
@@ -55,13 +55,10 @@ SmartAttd System
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   `);
   
-  return {
-    success: true,
-    message: `Report sent to ${student.email}`
-  };
+  return { success: true, message: `Report sent to ${student.email}` };
 };
 
-export const sendAttendanceReportToParent = (student, parentEmail, attendanceData) => {
+export const sendAttendanceReportToParent = (student, parentEmail, attendanceData, periodLabel) => {
   const avgAttendance = attendanceData.reduce((acc, curr) => 
     acc + (curr.attendedHours / curr.totalHours * 100), 0) / attendanceData.length;
   
@@ -69,11 +66,11 @@ export const sendAttendanceReportToParent = (student, parentEmail, attendanceDat
 📧 EMAIL SENT TO PARENT
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 To: ${parentEmail}
-Subject: Your Child's Monthly Attendance Report - ${student.name}
+Subject: Attendance Report for ${student.name} — ${periodLabel}
 
 Dear Parent/Guardian,
 
-This is the monthly attendance report for your child ${student.name} (${student.rollNo}).
+This is the attendance report for your child ${student.name} (${student.rollNo}) for ${periodLabel}.
 
 Overall Attendance: ${avgAttendance.toFixed(1)}%
 Status: ${avgAttendance >= 75 ? '✅ Safe Zone' : avgAttendance >= 65 ? '⚠️ Warning Zone' : '❌ Critical - Immediate Attention Required'}
@@ -91,44 +88,34 @@ Please ensure regular attendance to avoid any academic complications.
 
 You can login to SmartAttd using your parent credentials to view detailed reports.
 
-For any concerns, please contact the class teacher.
-
 Best regards,
 SmartAttd System
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   `);
   
-  return {
-    success: true,
-    message: `Report sent to parent at ${parentEmail}`
-  };
+  return { success: true, message: `Report sent to parent at ${parentEmail}` };
 };
 
 // Simulate sending notifications when attendance is saved
-export const notifyAttendanceSaved = (students, attendanceData, staffList) => {
+export const notifyAttendanceSaved = (students, attendanceData, staffList, periodLabel) => {
+  const label = periodLabel || `Semester Report (${new Date().getFullYear()})`;
   const notifications = [];
   
-  // Send to each student
   students.forEach(student => {
     const studentRecords = attendanceData.filter(r => r.studentId === student.id);
     if (studentRecords.length > 0) {
-      sendAttendanceReportToStudent(student, studentRecords);
+      sendAttendanceReportToStudent(student, studentRecords, label);
       notifications.push(`Student: ${student.email}`);
       
-      // Send to parent if guardian email exists
       if (student.guardianName && student.phone) {
         const parentEmail = `parent.${student.rollNo.toLowerCase()}@college.edu`;
-        sendAttendanceReportToParent(student, parentEmail, studentRecords);
+        sendAttendanceReportToParent(student, parentEmail, studentRecords, label);
         notifications.push(`Parent: ${parentEmail}`);
       }
     }
   });
   
-  return {
-    success: true,
-    count: notifications.length,
-    recipients: notifications
-  };
+  return { success: true, count: notifications.length, recipients: notifications };
 };
 
 // Schedule month-end reminders (simulated)

@@ -7,20 +7,39 @@ import OverallPredictionPanel from './OverallPredictionPanel';
 import AttendanceCalculator from './AttendanceCalculator';
 import { downloadPDF } from '../../utils/downloadReport';
 
+// June(6)-Dec(12) = Sem 1 | Jan(1)-May(5) = Sem 2
+const SEM_MONTHS = {
+  1: ["June", "July", "August", "September", "October", "November", "December"],
+  2: ["January", "February", "March", "April", "May"]
+};
+
 const StudentDashboard = ({ student, attendanceData, onUpdateProfile, isReadOnly }) => {
   const [showAiModal, setShowAiModal] = useState(false);
   const [aiMode, setAiMode] = useState('menu');
   const [isGenerating, setIsGenerating] = useState(false);
   const [aiResult, setAiResult] = useState('');
   const [letterReason, setLetterReason] = useState('');
+  const [selectedSem, setSelectedSem] = useState('all');
   const [selectedMonth, setSelectedMonth] = useState('all');
 
-  const availableMonths = [...new Set(attendanceData.map(r => r.month))].filter(Boolean);
-  
-  const myAttendance = attendanceData.filter(r => {
+  const myRaw = attendanceData.filter(r => r.studentId === student.id);
+
+  // Months available for the chosen semester (or all months if "all")
+  const availableMonths = selectedSem === 'all'
+    ? [...new Set(myRaw.map(r => r.month))].filter(Boolean)
+    : [...new Set(myRaw.filter(r => r.semester === parseInt(selectedSem)).map(r => r.month))].filter(Boolean);
+
+  const myAttendance = myRaw.filter(r => {
+    const semMatch = selectedSem === 'all' || r.semester === parseInt(selectedSem);
     const monthMatch = selectedMonth === 'all' || r.month === selectedMonth;
-    return r.studentId === student.id && monthMatch;
+    return semMatch && monthMatch;
   });
+
+  // Reset month when semester changes
+  const handleSemChange = (val) => {
+    setSelectedSem(val);
+    setSelectedMonth('all');
+  };
   
   const totalConducted = myAttendance.reduce((acc, curr) => acc + curr.totalHours, 0);
   const totalAttended = myAttendance.reduce((acc, curr) => acc + curr.attendedHours, 0);
@@ -92,18 +111,33 @@ const StudentDashboard = ({ student, attendanceData, onUpdateProfile, isReadOnly
 
   return (
     <div className="space-y-8">
-      {/* Month Filter - Prominent Position */}
+      {/* Semester + Month Filter */}
       <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
             <div className="flex items-center gap-2">
               <Calendar size={18} className="text-blue-600" />
-              <h3 className="font-semibold text-slate-700 text-sm">Filter by Month</h3>
+              <h3 className="font-semibold text-slate-700 text-sm">Filter</h3>
             </div>
-          </div>
-          <div className="flex items-center gap-3">
+            {/* Semester pills */}
+            <div className="flex gap-2">
+              {[['all','All Sems'], ['1','Sem 1'], ['2','Sem 2']].map(([val, label]) => (
+                <button
+                  key={val}
+                  onClick={() => handleSemChange(val)}
+                  className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
+                    selectedSem === val
+                      ? 'bg-blue-600 text-white shadow'
+                      : 'bg-slate-100 text-slate-600 hover:bg-blue-50 hover:text-blue-600'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            {/* Month dropdown */}
             <select
-              className="px-4 py-2 border border-slate-300 rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white text-slate-700 hover:border-slate-400 transition-colors min-w-[160px]"
+              className="px-3 py-1.5 border border-slate-300 rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none bg-white text-slate-700 min-w-[140px]"
               value={selectedMonth}
               onChange={(e) => setSelectedMonth(e.target.value)}
             >
@@ -112,14 +146,14 @@ const StudentDashboard = ({ student, attendanceData, onUpdateProfile, isReadOnly
                 <option key={month} value={month}>{month}</option>
               ))}
             </select>
-            <button
-              onClick={handleGeneratePDF}
-              className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors text-sm"
-            >
-              <Download size={16} />
-              Download PDF
-            </button>
           </div>
+          <button
+            onClick={handleGeneratePDF}
+            className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors text-sm"
+          >
+            <Download size={16} />
+            Download PDF
+          </button>
         </div>
       </div>
 

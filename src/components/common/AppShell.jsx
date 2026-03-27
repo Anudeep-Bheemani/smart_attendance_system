@@ -37,10 +37,13 @@ const AppShell = ({ user, onLogout, children, activeView, setActiveView, darkMod
     <div className="flex h-screen bg-slate-50 overflow-hidden font-sans">
       <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 text-slate-300 transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="flex items-center justify-between p-6 border-b border-slate-800">
-          <div className="flex items-center gap-2 font-bold text-white text-xl">
+          <button
+            onClick={() => { onLogout(); setIsMobileMenuOpen(false); }}
+            className="flex items-center gap-2 font-bold text-white text-xl hover:opacity-80 transition-opacity"
+          >
             <GraduationCap className="text-blue-500" />
             <span>SmartAttd.</span>
-          </div>
+          </button>
           <button onClick={() => setIsMobileMenuOpen(false)} className="md:hidden">
             <X size={24} />
           </button>

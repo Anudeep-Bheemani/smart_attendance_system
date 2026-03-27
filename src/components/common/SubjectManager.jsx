@@ -1,17 +1,18 @@
 import React, { useState } from 'react';
 import { Plus, Edit3, Trash2, BookOpen, Layers, Calendar, Save, X } from 'lucide-react';
 
-const SubjectManager = ({ subjects, setSubjects, branches }) => {
+const SubjectManager = ({ subjects, onUpdateSubjects, branches }) => {
   const [selectedBranch, setSelectedBranch] = useState('CSE');
   const [selectedYear, setSelectedYear] = useState('1');
+  const [selectedSem, setSelectedSem] = useState('1');
   const [showModal, setShowModal] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [currentSubject, setCurrentSubject] = useState('');
   const [editIndex, setEditIndex] = useState(null);
 
   const years = ['1', '2', '3', '4'];
-  const classSubjects = subjects[selectedBranch]?.[selectedYear] || [];
-  const classKey = `${selectedBranch} Year ${selectedYear}`;
+  const classSubjects = subjects[selectedBranch]?.[selectedYear]?.[selectedSem] || [];
+  const classKey = `${selectedBranch} Year ${selectedYear} Sem ${selectedSem}`;
 
   const handleAdd = () => {
     setEditMode(false);
@@ -26,47 +27,43 @@ const SubjectManager = ({ subjects, setSubjects, branches }) => {
     setShowModal(true);
   };
 
-  const handleSave = () => {
-    if (!currentSubject.trim()) {
-      alert('Please enter a subject name');
-      return;
+  const handleSave = async () => {
+    if (!currentSubject.trim()) { alert('Please enter a subject name'); return; }
+
+    const updated = JSON.parse(JSON.stringify(subjects));
+    if (!updated[selectedBranch]) updated[selectedBranch] = {};
+    if (!updated[selectedBranch][selectedYear]) updated[selectedBranch][selectedYear] = {};
+    if (!updated[selectedBranch][selectedYear][selectedSem]) updated[selectedBranch][selectedYear][selectedSem] = [];
+
+    if (editMode) {
+      updated[selectedBranch][selectedYear][selectedSem][editIndex] = currentSubject.trim();
+    } else {
+      if (updated[selectedBranch][selectedYear][selectedSem].includes(currentSubject.trim())) {
+        alert('Subject already exists for this class'); return;
+      }
+      updated[selectedBranch][selectedYear][selectedSem] = [...updated[selectedBranch][selectedYear][selectedSem], currentSubject.trim()];
     }
 
-    setSubjects(prev => {
-      const updated = { ...prev };
-      if (!updated[selectedBranch]) {
-        updated[selectedBranch] = {};
-      }
-      if (!updated[selectedBranch][selectedYear]) {
-        updated[selectedBranch][selectedYear] = [];
-      }
-
-      if (editMode) {
-        updated[selectedBranch][selectedYear][editIndex] = currentSubject.trim();
-      } else {
-        if (updated[selectedBranch][selectedYear].includes(currentSubject.trim())) {
-          alert('Subject already exists for this class');
-          return prev;
-        }
-        updated[selectedBranch][selectedYear] = [...updated[selectedBranch][selectedYear], currentSubject.trim()];
-      }
-
-      return updated;
-    });
-
-    setShowModal(false);
-    setCurrentSubject('');
-    alert(editMode ? 'Subject updated successfully!' : 'Subject added successfully!');
+    try {
+      await onUpdateSubjects(updated);
+      setShowModal(false);
+      setCurrentSubject('');
+      alert(editMode ? 'Subject updated successfully!' : 'Subject added successfully!');
+    } catch (err) {
+      // error already alerted in App.jsx
+    }
   };
 
-  const handleDelete = (index) => {
+  const handleDelete = async (index) => {
     if (window.confirm('Are you sure you want to delete this subject?')) {
-      setSubjects(prev => {
-        const updated = { ...prev };
-        updated[selectedBranch][selectedYear] = updated[selectedBranch][selectedYear].filter((_, i) => i !== index);
-        return updated;
-      });
-      alert('Subject deleted successfully!');
+      const updated = JSON.parse(JSON.stringify(subjects));
+      updated[selectedBranch][selectedYear][selectedSem] = updated[selectedBranch][selectedYear][selectedSem].filter((_, i) => i !== index);
+      try {
+        await onUpdateSubjects(updated);
+        alert('Subject deleted successfully!');
+      } catch (err) {
+        // error already alerted in App.jsx
+      }
     }
   };
 
@@ -109,6 +106,25 @@ const SubjectManager = ({ subjects, setSubjects, branches }) => {
               ))}
             </select>
           </div>
+          <div className="flex-1">
+            <label className="block text-sm font-medium text-slate-700 mb-2">Semester</label>
+            <div className="flex gap-2">
+              {['1', '2'].map(s => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => setSelectedSem(s)}
+                  className={`flex-1 py-2 rounded-lg font-semibold text-sm border transition-all ${
+                    selectedSem === s
+                      ? 'bg-blue-600 text-white border-blue-600 shadow'
+                      : 'bg-white text-slate-600 border-slate-300 hover:border-blue-400'
+                  }`}
+                >
+                  Sem {s}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
         <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
           <p className="text-sm text-blue-800">
@@ -124,7 +140,7 @@ const SubjectManager = ({ subjects, setSubjects, branches }) => {
           <div>
             <h3 className="font-bold text-slate-800 flex items-center gap-2">
               <BookOpen size={18} className="text-blue-500" />
-              Subjects for {selectedBranch} Year {selectedYear}
+              Subjects for {selectedBranch} Year {selectedYear} — Sem {selectedSem}
             </h3>
             <p className="text-sm text-slate-500 mt-1">{classSubjects.length} subjects</p>
           </div>
@@ -175,7 +191,7 @@ const SubjectManager = ({ subjects, setSubjects, branches }) => {
           ) : (
             <div className="text-center py-12 text-slate-400">
               <BookOpen size={48} className="mx-auto mb-4 opacity-20" />
-              <p className="font-medium">No subjects added for {selectedBranch} Year {selectedYear}</p>
+              <p className="font-medium">No subjects added for {selectedBranch} Year {selectedYear} Sem {selectedSem}</p>
               <p className="text-sm">Click "Add Subject" to get started</p>
             </div>
           )}

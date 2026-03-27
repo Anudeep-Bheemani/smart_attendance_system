@@ -7,6 +7,7 @@ import { downloadExcel, downloadPDF } from '../../utils/downloadReport';
 export const ClassAttendanceView = ({ currentUser, allStudents, attendanceData }) => {
   const [sortMode, setSortMode] = useState('roll');
   const [filterMode, setFilterMode] = useState('all');
+  const [selectedSem, setSelectedSem] = useState('all');
 
   const classmates = allStudents.filter(s => 
     s.branch === currentUser.branch && 
@@ -14,7 +15,10 @@ export const ClassAttendanceView = ({ currentUser, allStudents, attendanceData }
   );
 
   const classmatesWithStats = classmates.map(student => {
-    const records = attendanceData.filter(r => r.studentId === student.id);
+    const records = attendanceData.filter(r => {
+      const semMatch = selectedSem === 'all' || r.semester === parseInt(selectedSem);
+      return r.studentId === student.id && semMatch;
+    });
     const totalConducted = records.reduce((acc, curr) => acc + curr.totalHours, 0);
     const totalAttended = records.reduce((acc, curr) => acc + curr.attendedHours, 0);
     const percentage = parseFloat(calculatePercentage(totalAttended, totalConducted));
@@ -84,6 +88,24 @@ export const ClassAttendanceView = ({ currentUser, allStudents, attendanceData }
 
   return (
     <div className="space-y-6">
+      {/* Semester Filter */}
+      <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex items-center gap-3">
+        <span className="text-sm font-semibold text-slate-600">Semester:</span>
+        {[['all','All Sems'], ['1','Sem 1'], ['2','Sem 2']].map(([val, label]) => (
+          <button
+            key={val}
+            onClick={() => setSelectedSem(val)}
+            className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
+              selectedSem === val
+                ? 'bg-blue-600 text-white shadow'
+                : 'bg-slate-100 text-slate-600 hover:bg-blue-50 hover:text-blue-600'
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
       {/* Filter Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div 

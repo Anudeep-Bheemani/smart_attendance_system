@@ -13,145 +13,319 @@ import AttendanceEntry from './components/lecturer/AttendanceEntry';
 import LecturerRecordManager from './components/lecturer/LecturerRecordManager';
 import LecturerSettings from './components/lecturer/LecturerSettings';
 import SubjectManager from './components/common/SubjectManager';
-import { INITIAL_STUDENTS, INITIAL_STAFF, INITIAL_ADMIN, INITIAL_BRANCHES, SUBJECTS } from './constants';
-import { generateMockAttendance } from './utils';
-import { FileText, Settings, Sparkles } from 'lucide-react';
+import { api } from './api';
+import { FileText, Settings, Sparkles, Loader2 } from 'lucide-react';
 
 const MainApp = () => {
   const [currentUser, setCurrentUser] = useState(null);
-  const [activeView, setActiveView] = useState('dashboard');
+  const [activeView, setActiveView] = useState(() => localStorage.getItem('activeView') || 'dashboard');
+
+  const handleSetActiveView = (view) => {
+    localStorage.setItem('activeView', view);
+    setActiveView(view);
+  };
   const [darkMode, setDarkMode] = useState(false);
-  
-  const [students, setStudents] = useState(() => {
-    const saved = localStorage.getItem('students');
-    return saved ? JSON.parse(saved) : INITIAL_STUDENTS;
-  });
-  const [staffList, setStaffList] = useState(() => {
-    const saved = localStorage.getItem('staffList');
-    return saved ? JSON.parse(saved) : INITIAL_STAFF;
-  });
-  const [branches, setBranches] = useState(() => {
-    const saved = localStorage.getItem('branches');
-    return saved ? JSON.parse(saved) : INITIAL_BRANCHES;
-  });
-  const [subjects, setSubjects] = useState(() => {
-    const saved = localStorage.getItem('subjects');
-    return saved ? JSON.parse(saved) : SUBJECTS;
-  });
-  const [attendanceData, setAttendanceData] = useState(() => {
-    const saved = localStorage.getItem('attendanceData');
-    if (saved) return JSON.parse(saved);
-    const savedStudents = localStorage.getItem('students');
-    const savedSubjects = localStorage.getItem('subjects');
-    const studentsToUse = savedStudents ? JSON.parse(savedStudents) : INITIAL_STUDENTS;
-    const subjectsToUse = savedSubjects ? JSON.parse(savedSubjects) : SUBJECTS;
-    const initial = generateMockAttendance(studentsToUse, subjectsToUse);
-    localStorage.setItem('attendanceData', JSON.stringify(initial));
-    return initial;
+  const [loading, setLoading] = useState(true);
+  const [verifyToken, setVerifyToken] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('verify') || null;
   });
 
-  useEffect(() => {
-    localStorage.setItem('students', JSON.stringify(students));
-  }, [students]);
+  const [students, setStudents] = useState([]);
+  const [staffList, setStaffList] = useState([]);
+  const [branches, setBranches] = useState([]);
+  const [subjects, setSubjects] = useState({});
+  const [attendanceData, setAttendanceData] = useState([]);
 
+  // Restore session on mount
   useEffect(() => {
-    localStorage.setItem('staffList', JSON.stringify(staffList));
-  }, [staffList]);
-
-  useEffect(() => {
-    localStorage.setItem('branches', JSON.stringify(branches));
-  }, [branches]);
-
-  useEffect(() => {
-    localStorage.setItem('subjects', JSON.stringify(subjects));
-  }, [subjects]);
-
-  useEffect(() => {
-    localStorage.setItem('attendanceData', JSON.stringify(attendanceData));
-  }, [attendanceData]);
-
-  const handleLogin = (role, credentials) => {
-    let user = null;
-    
-    if (role === 'student' || role === 'parent') {
-      const student = students.find(s => s.rollNo === credentials.id || s.email === credentials.id);
-      if (student && student.password === credentials.password) {
-         user = role === 'parent' 
-           ? { ...student, id: 'P-'+student.id, role: 'parent', name: `Parent of ${student.name}`, childId: student.id } 
-           : student;
-      }
-    } else if (role === 'lecturer') {
-      user = staffList.find(s => s.email === credentials.id && s.password === credentials.password);
-    } else if (role === 'admin') {
-      user = INITIAL_ADMIN.find(a => a.email === credentials.id && a.password === credentials.password);
+    const token = localStorage.getItem('token');
+    if (token) {
+      api.getMe()
+        .then(user => {
+          setCurrentUser(user);
+          return loadAllData();
+        })
+        .catch(() => {
+          localStorage.removeItem('token');
+          setLoading(false);
+        });
+    } else {
+      setLoading(false);
     }
+  }, []);
 
-    if (user) {
+  const loadAllData = async () => {
+    try {
+      const [s, st, b, sub, att] = await Promise.all([
+        api.getStudents(),
+        api.getStaff(),
+        api.getBranches(),
+        api.getSubjects(),
+        api.getAttendance()
+      ]);
+      setStudents(s);
+      setStaffList(st);
+      setBranches(b);
+      setSubjects(sub);
+      setAttendanceData(att);
+    } catch (err) {
+      console.error('Failed to load data:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ── Auth ────────────────────────────────────────────────────────────────
+  const handleLogin = async (role, credentials) => {
+    try {
+      const { token, user } = await api.login(role, credentials.id, credentials.password);
+      localStorage.setItem('token', token);
       setCurrentUser(user);
       setActiveView('dashboard');
-    } else {
-      alert("Invalid credentials. Try the demo accounts.");
+      await loadAllData();
+    } catch (err) {
+      alert('Invalid credentials. Try the demo accounts.');
     }
   };
 
-  const handleVerifyStudent = (email, newPassword) => {
-    setStudents(prev => prev.map(s => {
-      if (s.email === email) {
-        return { ...s, password: newPassword, verified: true };
-      }
-      return s;
-    }));
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('activeView');
+    setActiveView('dashboard');
+    setCurrentUser(null);
+    setStudents([]);
+    setStaffList([]);
+    setBranches([]);
+    setSubjects({});
+    setAttendanceData([]);
   };
 
-  const handleUpdateAttendance = (studentId, subject, field, value, month = 'October') => {
-    setAttendanceData(prev => {
-      const existingIndex = prev.findIndex(r => r.studentId === studentId && r.subject === subject && r.month === month);
-      if (existingIndex >= 0) {
-        const updated = [...prev];
-        updated[existingIndex] = { ...updated[existingIndex], [field]: value };
-        return updated;
-      } else {
-        const student = students.find(s => s.id === studentId);
-        const newRecord = {
-          id: Math.random().toString(36).substr(2, 9),
-          studentId,
-          studentName: student?.name || '',
-          rollNo: student?.rollNo || '',
-          subject,
-          month: month,
-          totalHours: field === 'totalHours' ? value : 40,
-          attendedHours: field === 'attendedHours' ? value : 0
-        };
-        return [...prev, newRecord];
-      }
-    });
-  };
-
-  const handleUpdateProfile = (updatedStudent) => {
-    setStudents(prev => prev.map(s => s.id === updatedStudent.id ? updatedStudent : s));
-    if (currentUser.id === updatedStudent.id) {
-       setCurrentUser(updatedStudent);
+  const handleVerifyStudent = async (email, newPassword) => {
+    try {
+      await api.verifyStudent(email, newPassword);
+    } catch (err) {
+      alert('Verification failed. Please try again.');
     }
-    alert("Profile updated successfully!");
   };
 
-  const handleUpdateLecturerProfile = (updatedLecturer) => {
-    setStaffList(prev => prev.map(s => s.id === updatedLecturer.id ? updatedLecturer : s));
-    if (currentUser.id === updatedLecturer.id) {
-       setCurrentUser(updatedLecturer);
+  // ── Students ────────────────────────────────────────────────────────────
+  const handleAddStudent = async (studentData) => {
+    try {
+      const created = await api.createStudent(studentData);
+      setStudents(prev => [...prev, created]);
+      return created;
+    } catch (err) {
+      alert(err.message || 'Failed to add student');
+      throw err;
     }
-    alert("Profile updated successfully!");
   };
+
+  const handleUpdateStudent = async (id, studentData) => {
+    try {
+      const updated = await api.updateStudent(id, studentData);
+      setStudents(prev => prev.map(s => s.id === id ? updated : s));
+      return updated;
+    } catch (err) {
+      alert(err.message || 'Failed to update student');
+      throw err;
+    }
+  };
+
+  const handleDeleteStudent = async (id) => {
+    try {
+      await api.deleteStudent(id);
+      setStudents(prev => prev.filter(s => s.id !== id));
+    } catch (err) {
+      alert(err.message || 'Failed to delete student');
+      throw err;
+    }
+  };
+
+  const handleUpdateProfile = async (updatedStudent) => {
+    try {
+      const updated = await api.updateStudent(updatedStudent.id, updatedStudent);
+      setStudents(prev => prev.map(s => s.id === updated.id ? updated : s));
+      if (currentUser.id === updated.id) setCurrentUser(updated);
+      alert('Profile updated successfully!');
+    } catch (err) {
+      alert('Failed to update profile');
+    }
+  };
+
+  // ── Staff ───────────────────────────────────────────────────────────────
+  const handleAddStaff = async (staffData) => {
+    try {
+      const created = await api.createStaff(staffData);
+      setStaffList(prev => [...prev, created]);
+      return created;
+    } catch (err) {
+      alert(err.message || 'Failed to add staff');
+      throw err;
+    }
+  };
+
+  const handleUpdateStaff = async (id, staffData) => {
+    try {
+      const updated = await api.updateStaff(id, staffData);
+      setStaffList(prev => prev.map(s => s.id === id ? updated : s));
+      return updated;
+    } catch (err) {
+      alert(err.message || 'Failed to update staff');
+      throw err;
+    }
+  };
+
+  const handleDeleteStaff = async (id) => {
+    try {
+      await api.deleteStaff(id);
+      setStaffList(prev => prev.filter(s => s.id !== id));
+    } catch (err) {
+      alert(err.message || 'Failed to delete staff');
+      throw err;
+    }
+  };
+
+  const handleUpdateLecturerProfile = async (updatedLecturer) => {
+    try {
+      const updated = await api.updateStaff(updatedLecturer.id, updatedLecturer);
+      setStaffList(prev => prev.map(s => s.id === updated.id ? updated : s));
+      if (currentUser.id === updated.id) setCurrentUser(updated);
+      alert('Profile updated successfully!');
+    } catch (err) {
+      alert('Failed to update profile');
+    }
+  };
+
+  // ── Branches ────────────────────────────────────────────────────────────
+  const handleAddBranch = async (name) => {
+    try {
+      const created = await api.createBranch(name);
+      setBranches(prev => [...prev, created]);
+      return created;
+    } catch (err) {
+      alert(err.message || 'Failed to add branch');
+      throw err;
+    }
+  };
+
+  const handleDeleteBranch = async (name) => {
+    try {
+      await api.deleteBranch(name);
+      setBranches(prev => prev.filter(b => b !== name));
+    } catch (err) {
+      alert(err.message || 'Failed to delete branch');
+      throw err;
+    }
+  };
+
+  // ── Subjects ────────────────────────────────────────────────────────────
+  const handleUpdateSubjects = async (newSubjects) => {
+    try {
+      const updated = await api.updateSubjects(newSubjects);
+      setSubjects(updated);
+      return updated;
+    } catch (err) {
+      alert('Failed to update subjects');
+      throw err;
+    }
+  };
+
+  // ── Attendance ──────────────────────────────────────────────────────────
+  const handleUpdateAttendance = async (studentId, subject, field, value, month = 'October', semester = 1) => {
+    try {
+      const student = students.find(s => s.id === studentId);
+      const record = await api.upsertAttendance({
+        studentId,
+        subject,
+        month,
+        semester,
+        field,
+        value,
+        studentName: student?.name || '',
+        rollNo: student?.rollNo || ''
+      });
+      setAttendanceData(prev => {
+        const idx = prev.findIndex(r => r.studentId === studentId && r.subject === subject && r.month === month);
+        if (idx >= 0) {
+          const updated = [...prev];
+          updated[idx] = record;
+          return updated;
+        }
+        return [...prev, record];
+      });
+    } catch (err) {
+      console.error('Failed to update attendance:', err);
+    }
+  };
+
+  // ── Loading state ───────────────────────────────────────────────────────
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center">
+        <div className="text-center text-white">
+          <Loader2 size={48} className="animate-spin mx-auto mb-4 text-blue-400" />
+          <p className="text-xl font-semibold">Loading SmartAttd...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Render ──────────────────────────────────────────────────────────────
+  if (!currentUser) {
+    return (
+      <LandingPage
+        onLogin={handleLogin}
+        onVerify={handleVerifyStudent}
+        darkMode={darkMode}
+        setDarkMode={setDarkMode}
+        verifyToken={verifyToken}
+        onTokenUsed={() => {
+          setVerifyToken(null);
+          window.history.replaceState({}, '', window.location.pathname);
+        }}
+      />
+    );
+  }
 
   const renderContent = () => {
-    if (!currentUser) return <LandingPage onLogin={handleLogin} onVerify={handleVerifyStudent} students={students} />;
-
     switch (currentUser.role) {
       case 'admin':
-        if (activeView === 'student-management') return <AdminStudentManagement students={students} setStudents={setStudents} branches={branches} />;
-        if (activeView === 'staff-management') return <AdminStaffManager staffList={staffList} setStaffList={setStaffList} />;
-        if (activeView === 'branch-management') return <AdminBranchManager branches={branches} setBranches={setBranches} />;
-        if (activeView === 'subject-management') return <SubjectManager subjects={subjects} setSubjects={setSubjects} branches={branches} />;
+        if (activeView === 'student-management')
+          return (
+            <AdminStudentManagement
+              students={students}
+              branches={branches}
+              onAddStudent={handleAddStudent}
+              onUpdateStudent={handleUpdateStudent}
+              onDeleteStudent={handleDeleteStudent}
+            />
+          );
+        if (activeView === 'staff-management')
+          return (
+            <AdminStaffManager
+              staffList={staffList}
+              onAddStaff={handleAddStaff}
+              onUpdateStaff={handleUpdateStaff}
+              onDeleteStaff={handleDeleteStaff}
+            />
+          );
+        if (activeView === 'branch-management')
+          return (
+            <AdminBranchManager
+              branches={branches}
+              onAddBranch={handleAddBranch}
+              onDeleteBranch={handleDeleteBranch}
+            />
+          );
+        if (activeView === 'subject-management')
+          return (
+            <SubjectManager
+              subjects={subjects}
+              onUpdateSubjects={handleUpdateSubjects}
+              branches={branches}
+            />
+          );
         if (activeView === 'reports') return (
           <div className="min-h-screen flex items-center justify-center p-8 bg-gradient-to-br from-slate-50 to-blue-50">
             <div className="text-center max-w-2xl">
@@ -189,36 +363,96 @@ const MainApp = () => {
           </div>
         );
         return <AdminDashboard students={students} attendanceData={attendanceData} staffList={staffList} />;
-      
+
       case 'lecturer':
-        if (activeView === 'entry') return <AttendanceEntry students={students} attendanceData={attendanceData} updateAttendance={handleUpdateAttendance} branches={branches} subjects={subjects} staffList={staffList} />;
-        if (activeView === 'manage-records') return <LecturerRecordManager students={students} setStudents={setStudents} branches={branches} setBranches={setBranches} />;
-        if (activeView === 'subject-management') return <SubjectManager subjects={subjects} setSubjects={setSubjects} branches={branches} />;
-        if (activeView === 'settings') return <LecturerSettings user={currentUser} onUpdateProfile={handleUpdateLecturerProfile} branches={branches} />;
-        return <LecturerDashboard key={`${attendanceData.length}-${JSON.stringify(attendanceData.map(r => r.month))}`} user={currentUser} students={students} attendanceData={attendanceData} />;
+        if (activeView === 'entry')
+          return (
+            <AttendanceEntry
+              user={currentUser}
+              students={students}
+              attendanceData={attendanceData}
+              updateAttendance={handleUpdateAttendance}
+              branches={branches}
+              subjects={subjects}
+              staffList={staffList}
+            />
+          );
+        if (activeView === 'manage-records')
+          return (
+            <LecturerRecordManager
+              user={currentUser}
+              students={students}
+              branches={branches}
+              onAddStudent={handleAddStudent}
+              onUpdateStudent={handleUpdateStudent}
+              onDeleteStudent={handleDeleteStudent}
+              onAddBranch={handleAddBranch}
+              onDeleteBranch={handleDeleteBranch}
+            />
+          );
+        if (activeView === 'subject-management')
+          return (
+            <SubjectManager
+              subjects={subjects}
+              onUpdateSubjects={handleUpdateSubjects}
+              branches={branches}
+            />
+          );
+        if (activeView === 'settings')
+          return (
+            <LecturerSettings
+              user={currentUser}
+              onUpdateProfile={handleUpdateLecturerProfile}
+              branches={branches}
+            />
+          );
+        return (
+          <LecturerDashboard
+            key={`${attendanceData.length}-${JSON.stringify(attendanceData.map(r => r.month))}`}
+            user={currentUser}
+            students={students}
+            attendanceData={attendanceData}
+          />
+        );
 
       case 'student':
-        if (activeView === 'classmates') return <ClassAttendanceView currentUser={currentUser} allStudents={students} attendanceData={attendanceData} />;
-        if (activeView === 'profile') return <StudentProfile student={currentUser} />;
-        return <StudentDashboard key={attendanceData.length} student={currentUser} attendanceData={attendanceData} onUpdateProfile={handleUpdateProfile} isReadOnly={false} />;
+        if (activeView === 'classmates')
+          return <ClassAttendanceView currentUser={currentUser} allStudents={students} attendanceData={attendanceData} />;
+        if (activeView === 'profile')
+          return <StudentProfile student={currentUser} />;
+        return (
+          <StudentDashboard
+            key={attendanceData.length}
+            student={currentUser}
+            attendanceData={attendanceData}
+            onUpdateProfile={handleUpdateProfile}
+            isReadOnly={false}
+          />
+        );
 
-      case 'parent':
+      case 'parent': {
         const child = students.find(s => s.id === currentUser.childId);
-        return <StudentDashboard key={attendanceData.length} student={child} attendanceData={attendanceData} isReadOnly={true} />;
-      
+        return (
+          <StudentDashboard
+            key={attendanceData.length}
+            student={child}
+            attendanceData={attendanceData}
+            isReadOnly={true}
+          />
+        );
+      }
+
       default:
         return <div>Unknown Role</div>;
     }
   };
 
-  if (!currentUser) return <LandingPage onLogin={handleLogin} onVerify={handleVerifyStudent} darkMode={darkMode} setDarkMode={setDarkMode} students={students} />;
-
   return (
-    <AppShell 
-      user={currentUser} 
-      onLogout={() => setCurrentUser(null)} 
+    <AppShell
+      user={currentUser}
+      onLogout={handleLogout}
       activeView={activeView}
-      setActiveView={setActiveView}
+      setActiveView={handleSetActiveView}
       darkMode={darkMode}
       setDarkMode={setDarkMode}
     >

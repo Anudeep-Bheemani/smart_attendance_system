@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Plus, Trash2, Layers, X, Save } from 'lucide-react';
 
-const AdminBranchManager = ({ branches, setBranches }) => {
+const AdminBranchManager = ({ branches, onAddBranch, onDeleteBranch }) => {
   const [showModal, setShowModal] = useState(false);
   const [branchName, setBranchName] = useState('');
 
@@ -10,20 +10,26 @@ const AdminBranchManager = ({ branches, setBranches }) => {
     setShowModal(true);
   };
 
-  const handleSave = () => {
-    if (branchName && !branches.includes(branchName.trim())) {
-      setBranches(prev => [...prev, branchName.trim()]);
+  const handleSave = async () => {
+    if (!branchName.trim()) { alert('Branch name cannot be empty!'); return; }
+    if (branches.includes(branchName.trim().toUpperCase())) { alert('Branch already exists!'); return; }
+    try {
+      await onAddBranch(branchName.trim());
       alert('Branch added successfully!');
       setShowModal(false);
-    } else {
-      alert('Branch already exists or invalid name!');
+    } catch (err) {
+      // error already alerted in App.jsx
     }
   };
 
-  const handleDelete = (branch) => {
+  const handleDelete = async (branch) => {
     if (window.confirm(`Are you sure you want to delete ${branch} branch?`)) {
-      setBranches(prev => prev.filter(b => b !== branch));
-      alert('Branch deleted successfully!');
+      try {
+        await onDeleteBranch(branch);
+        alert('Branch deleted successfully!');
+      } catch (err) {
+        // error already alerted in App.jsx
+      }
     }
   };
 
