@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Plus, Edit3, Trash2, BookOpen, Layers, Calendar, Save, X } from 'lucide-react';
 
 const SubjectManager = ({ subjects, onUpdateSubjects, branches }) => {
-  const [selectedBranch, setSelectedBranch] = useState('CSE');
+  const [selectedBranch, setSelectedBranch] = useState(() => branches?.[0] || 'CSE');
   const [selectedYear, setSelectedYear] = useState('1');
   const [selectedSem, setSelectedSem] = useState('1');
   const [showModal, setShowModal] = useState(false);

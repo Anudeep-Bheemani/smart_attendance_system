@@ -164,7 +164,7 @@ const sendAttendanceReportToStudent = async (student, records, period) => {
 // ── Attendance Report Email (Parent) ─────────────────────────────────────────
 
 const sendAttendanceReportToParent = async (student, records, period) => {
-  if (!student.guardianName || !student.email) return;
+  if (!student.parentEmail) return;
 
   const totalHours = records.reduce((s, r) => s + r.totalHours, 0);
   const attendedHours = records.reduce((s, r) => s + r.attendedHours, 0);
@@ -208,11 +208,9 @@ const sendAttendanceReportToParent = async (student, records, period) => {
     </div>
   </div>`;
 
-  // Send to guardian's email — using student's email as fallback since schema stores guardianPhone not guardianEmail
-  // If your DB has a parentEmail field, replace student.email with student.parentEmail
   await transporter.sendMail({
     from: `"SmartAttd" <${process.env.GMAIL_USER}>`,
-    to: student.email, // change to student.parentEmail if that field exists
+    to: student.parentEmail,
     subject: `Attendance Update for ${student.name} · ${period}`,
     html,
   });
