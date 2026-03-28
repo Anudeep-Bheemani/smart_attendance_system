@@ -33,9 +33,9 @@ const detectSem = (semConfig, year, month) => {
 };
 
 const MODES = [
-  { id: 'whole',  label: 'Whole Sem',    icon: '◉' },
-  { id: 'single', label: 'Single Month', icon: '◎' },
-  { id: 'range',  label: 'Month Range',  icon: '⇔' },
+  { id: 'whole',  label: 'Whole Sem'    },
+  { id: 'single', label: 'Single Month' },
+  { id: 'range',  label: 'Month Range'  },
 ];
 
 const AttendanceFilter = ({ semConfig, year, defaultSem, onChange }) => {
@@ -99,36 +99,33 @@ const AttendanceFilter = ({ semConfig, year, defaultSem, onChange }) => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sem, mode, singleMonth, fromMonth, toMonth]);
 
-  /* ── Shared horizontal month strip ────────────────────────────── */
+  /* ── Horizontal month strip ── */
   const MonthStrip = ({ onClickMonth }) => {
     const fi = ALL_MONTHS.indexOf(fromMonth);
     const ti = ALL_MONTHS.indexOf(toMonth);
 
     return (
-      <div className="relative flex w-full bg-slate-100 rounded-2xl p-1 mt-4 overflow-hidden">
-        {/* Animated range band */}
+      <div className="relative flex w-full bg-slate-100 rounded-2xl p-1.5 mt-4 overflow-hidden">
         {mode === 'range' && fi >= 0 && ti >= 0 && (
           <div
-            className="absolute top-1 bottom-1 bg-indigo-100 rounded-xl pointer-events-none"
+            className="absolute top-1.5 bottom-1.5 bg-indigo-100 rounded-xl pointer-events-none"
             style={{
-              left:  `calc(${(fi / 12) * 100}% + 2px)`,
-              width: `calc(${((ti - fi + 1) / 12) * 100}% - 4px)`,
+              left:  `calc(${(fi / 12) * 100}% + 3px)`,
+              width: `calc(${((ti - fi + 1) / 12) * 100}% - 6px)`,
               transition: 'left 0.2s ease, width 0.2s ease',
             }}
           />
         )}
-
         {ALL_MONTHS.map((m, i) => {
           const isSelected = mode === 'single' && m === singleMonth;
           const isEndpoint = mode === 'range' && (m === fromMonth || m === toMonth);
           const inRange    = mode === 'range' && i > fi && i < ti;
-
           return (
             <button
               key={m}
               onClick={() => onClickMonth(m)}
               title={m}
-              className={`relative z-10 flex-1 py-2 rounded-xl text-[11px] font-bold transition-all duration-150 select-none ${
+              className={`relative z-10 flex-1 py-2.5 rounded-xl text-xs font-bold transition-all duration-150 select-none ${
                 isSelected || isEndpoint
                   ? 'bg-indigo-600 text-white shadow-sm'
                   : inRange
@@ -145,110 +142,100 @@ const AttendanceFilter = ({ semConfig, year, defaultSem, onChange }) => {
   };
 
   return (
-    <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+    <div className="bg-white border border-slate-200 rounded-2xl px-6 py-5 shadow-sm">
 
-      {/* ── Mode Tabs ── */}
-      <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl w-fit mb-4">
-        {MODES.map(({ id, label, icon }) => (
-          <button
-            key={id}
-            onClick={() => setMode(id)}
-            className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold transition-all duration-200 ${
-              mode === id
-                ? 'bg-white text-indigo-700 shadow-sm'
-                : 'text-slate-500 hover:text-slate-700'
-            }`}
+      {/* ── Top row: mode tabs + sem dropdown ── */}
+      <div className="flex flex-wrap items-center gap-3 mb-5">
+
+        {/* Mode tabs */}
+        <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
+          {MODES.map(({ id, label }) => (
+            <button
+              key={id}
+              onClick={() => setMode(id)}
+              className={`px-5 py-2.5 rounded-lg text-sm font-bold transition-all duration-200 ${
+                mode === id
+                  ? 'bg-white text-indigo-700 shadow-sm'
+                  : 'text-slate-500 hover:text-slate-700'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {/* Sem dropdown — shown in Whole Sem and hidden in Single (auto) / Range (no sem filter) */}
+        {mode === 'whole' && (
+          <select
+            value={sem}
+            onChange={e => handleSemChange(e.target.value)}
+            className="px-4 py-2.5 rounded-xl border-2 border-slate-200 bg-white text-sm font-bold text-slate-700 focus:outline-none focus:border-indigo-400 cursor-pointer"
           >
-            <span>{icon}</span> {label}
-          </button>
-        ))}
-      </div>
-
-      {/* ── Whole Sem ── */}
-      {mode === 'whole' && (
-        <div>
-          <div className="flex gap-3 mb-3">
             {['1','2'].map(s => {
-              const mths  = getSemMonths(semConfig, year, parseInt(s));
-              const active = sem === s;
+              const mths = getSemMonths(semConfig, year, parseInt(s));
               return (
-                <button
-                  key={s}
-                  onClick={() => handleSemChange(s)}
-                  className={`flex-1 px-4 py-3 rounded-xl border-2 text-left transition-all duration-200 ${
-                    active
-                      ? 'border-indigo-500 bg-indigo-50 shadow-sm'
-                      : 'border-slate-200 bg-white hover:border-indigo-300 hover:bg-indigo-50/40'
-                  }`}
-                >
-                  <div className={`text-sm font-bold mb-0.5 ${active ? 'text-indigo-700' : 'text-slate-700'}`}>
-                    Semester {s}
-                  </div>
-                  <div className={`text-xs ${active ? 'text-indigo-500' : 'text-slate-400'}`}>
-                    {mths[0]?.slice(0,3)} – {mths[mths.length-1]?.slice(0,3)} · {mths.length} months
-                  </div>
-                </button>
+                <option key={s} value={s}>
+                  Semester {s} — {mths[0]?.slice(0,3)} to {mths[mths.length-1]?.slice(0,3)}
+                </option>
               );
             })}
-          </div>
-          {/* Show all 12 months, highlight the ones in the selected sem */}
-          <div className="relative flex w-full bg-slate-100 rounded-2xl p-1 overflow-hidden">
-            {ALL_MONTHS.map((m, i) => {
-              const inSem = semMonths.includes(m);
-              return (
-                <div
-                  key={m}
-                  title={m}
-                  className={`flex-1 py-2 rounded-xl text-center text-[11px] font-bold select-none ${
-                    inSem
-                      ? 'bg-indigo-600 text-white shadow-sm'
-                      : 'text-slate-400'
-                  }`}
-                >
-                  {ABBR[i]}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
+          </select>
+        )}
 
-      {/* ── Single Month ── */}
-      {mode === 'single' && (
-        <div>
-          <div className="flex items-center justify-between mb-1">
-            <span className="text-xs text-slate-500 font-medium">Tap a month</span>
-            <span className="text-xs font-semibold text-indigo-600 bg-indigo-50 border border-indigo-200 px-2.5 py-1 rounded-full">
-              Sem {autoSem} (auto)
+        {/* Auto-sem badge for single */}
+        {mode === 'single' && (
+          <span className="px-4 py-2.5 text-sm font-bold text-indigo-600 bg-indigo-50 border-2 border-indigo-200 rounded-xl">
+            Sem {autoSem} — auto detected
+          </span>
+        )}
+
+        {/* Range step indicator */}
+        {mode === 'range' && (
+          <div className="flex items-center gap-2">
+            <span className={`px-4 py-2.5 rounded-xl text-sm font-bold transition-all ${
+              rangeStep === 'from' ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-500'
+            }`}>
+              {rangeStep === 'from' ? '① Pick start' : `Start: ${fromMonth.slice(0,3)}`}
             </span>
-          </div>
-          <MonthStrip onClickMonth={setSingleMonth} />
-        </div>
-      )}
-
-      {/* ── Month Range ── */}
-      {mode === 'range' && (
-        <div>
-          <div className="flex items-center justify-between mb-1">
-            <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
-              <span className={`px-2.5 py-1 rounded-full font-bold transition-all ${
-                rangeStep === 'from' ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-500'
-              }`}>
-                {rangeStep === 'from' ? '① Pick start' : `✓ ${fromMonth.slice(0,3)}`}
-              </span>
-              <span className="text-slate-300">→</span>
-              <span className={`px-2.5 py-1 rounded-full font-bold transition-all ${
-                rangeStep === 'to' ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-500'
-              }`}>
-                {rangeStep === 'to' ? '② Pick end' : `✓ ${toMonth.slice(0,3)}`}
-              </span>
-            </div>
-            <span className="text-xs font-semibold text-slate-500">
+            <span className="text-slate-300 text-lg">→</span>
+            <span className={`px-4 py-2.5 rounded-xl text-sm font-bold transition-all ${
+              rangeStep === 'to' ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-500'
+            }`}>
+              {rangeStep === 'to' ? '② Pick end' : `End: ${toMonth.slice(0,3)}`}
+            </span>
+            <span className="ml-2 text-sm font-semibold text-slate-400">
               {activeMonths.length} month{activeMonths.length !== 1 ? 's' : ''}
             </span>
           </div>
-          <MonthStrip onClickMonth={handleRangeClick} />
+        )}
+      </div>
+
+      {/* ── Month strip ── */}
+      {mode === 'whole' && (
+        <div className="relative flex w-full bg-slate-100 rounded-2xl p-1.5 overflow-hidden">
+          {ALL_MONTHS.map((m, i) => {
+            const inSem = semMonths.includes(m);
+            return (
+              <div
+                key={m}
+                title={m}
+                className={`flex-1 py-2.5 rounded-xl text-center text-xs font-bold select-none ${
+                  inSem ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-400'
+                }`}
+              >
+                {ABBR[i]}
+              </div>
+            );
+          })}
         </div>
+      )}
+
+      {mode === 'single' && (
+        <MonthStrip onClickMonth={setSingleMonth} />
+      )}
+
+      {mode === 'range' && (
+        <MonthStrip onClickMonth={handleRangeClick} />
       )}
     </div>
   );
