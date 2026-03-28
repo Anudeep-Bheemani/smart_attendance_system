@@ -6,9 +6,10 @@ import { api } from '../../api';
 import RiskBadge from '../common/RiskBadge';
 import { downloadExcel, downloadPDF } from '../../utils/downloadReport';
 
+// Jul-Dec = Sem 1 | Jan-Jun = Sem 2
 const SEM_MONTHS = {
-  1: ['June','July','August','September','October','November','December'],
-  2: ['January','February','March','April','May']
+  1: ['July','August','September','October','November','December'],
+  2: ['January','February','March','April','May','June']
 };
 
 const LecturerDashboard = ({ user, students, attendanceData }) => {
@@ -21,11 +22,10 @@ const LecturerDashboard = ({ user, students, attendanceData }) => {
   const [selectedBranch, setSelectedBranch] = useState(user.branch || 'CSE');
   const [selectedYear, setSelectedYear] = useState(String(user.academicYear || '1'));
   const [selectedSemester, setSelectedSemester] = useState(() => {
-    // Academic year order: June→Dec = Sem1 (order 1-7), Jan→May = Sem2 (order 8-12)
+    // Jul-Dec = Sem1, Jan-Jun = Sem2 → academic year: Jan-Jun then Jul-Dec
     const ACADEMIC_ORDER = {
-      'June': 1, 'July': 2, 'August': 3, 'September': 4,
-      'October': 5, 'November': 6, 'December': 7,
-      'January': 8, 'February': 9, 'March': 10, 'April': 11, 'May': 12
+      'January': 1, 'February': 2, 'March': 3, 'April': 4, 'May': 5, 'June': 6,
+      'July': 7, 'August': 8, 'September': 9, 'October': 10, 'November': 11, 'December': 12
     };
     const initBranch = user.branch || '';
     const initYear = parseInt(user.academicYear || '1');
@@ -36,7 +36,7 @@ const LecturerDashboard = ({ user, students, attendanceData }) => {
     if (classRecords.length === 0) {
       // fallback: current month determines semester
       const m = new Date().getMonth() + 1;
-      return m >= 6 ? '1' : '2';
+      return m >= 7 ? '1' : '2';
     }
     const latest = classRecords.reduce((best, r) =>
       (ACADEMIC_ORDER[r.month] || 0) > (ACADEMIC_ORDER[best.month] || 0) ? r : best

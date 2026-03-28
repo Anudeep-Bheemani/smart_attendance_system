@@ -7,10 +7,15 @@ import OverallPredictionPanel from './OverallPredictionPanel';
 import AttendanceCalculator from './AttendanceCalculator';
 import { downloadPDF } from '../../utils/downloadReport';
 
-// June(6)-Dec(12) = Sem 1 | Jan(1)-May(5) = Sem 2
+// Jul-Dec = Sem 1 | Jan-Jun = Sem 2
 const SEM_MONTHS = {
-  1: ["June", "July", "August", "September", "October", "November", "December"],
-  2: ["January", "February", "March", "April", "May"]
+  1: ["July", "August", "September", "October", "November", "December"],
+  2: ["January", "February", "March", "April", "May", "June"]
+};
+
+const getDefaultSem = () => {
+  const m = new Date().getMonth() + 1;
+  return m >= 7 ? '1' : '2';
 };
 
 const StudentDashboard = ({ student, attendanceData, onUpdateProfile, isReadOnly }) => {
@@ -19,15 +24,18 @@ const StudentDashboard = ({ student, attendanceData, onUpdateProfile, isReadOnly
   const [isGenerating, setIsGenerating] = useState(false);
   const [aiResult, setAiResult] = useState('');
   const [letterReason, setLetterReason] = useState('');
-  const [selectedSem, setSelectedSem] = useState('all');
+  const [selectedSem, setSelectedSem] = useState(getDefaultSem);
   const [selectedMonth, setSelectedMonth] = useState('all');
 
   const myRaw = attendanceData.filter(r => r.studentId === student.id);
 
   // Months available for the chosen semester (or all months if "all")
-  const availableMonths = selectedSem === 'all'
-    ? [...new Set(myRaw.map(r => r.month))].filter(Boolean)
-    : [...new Set(myRaw.filter(r => r.semester === parseInt(selectedSem)).map(r => r.month))].filter(Boolean);
+  const semMonthOrder = selectedSem === 'all'
+    ? [...SEM_MONTHS[1], ...SEM_MONTHS[2]]
+    : SEM_MONTHS[parseInt(selectedSem)];
+  const availableMonths = semMonthOrder.filter(m =>
+    myRaw.some(r => r.month === m && (selectedSem === 'all' || r.semester === parseInt(selectedSem)))
+  );
 
   const myAttendance = myRaw.filter(r => {
     const semMatch = selectedSem === 'all' || r.semester === parseInt(selectedSem);

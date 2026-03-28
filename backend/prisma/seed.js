@@ -119,9 +119,8 @@ function generateAttendance(students) {
     const yearSubs = branchSubs[student.year];
     if (!yearSubs) return;
 
-    // ── Sem 1 demo data (previous sem) ──────────────────────────────────
-    // Use 2 months of Sem 1 as "previous semester" demo data
-    const sem1DemoMonths = ['October', 'November'];
+    // ── Sem 1 demo data (Jul–Dec) ────────────────────────────────────────
+    const sem1DemoMonths = ['September', 'October'];
     const sem1Subjects = yearSubs[1] || [];
     sem1Subjects.forEach(sub => {
       sem1DemoMonths.forEach(month => {
@@ -138,9 +137,8 @@ function generateAttendance(students) {
       });
     });
 
-    // ── Sem 2 demo data (current sem) ────────────────────────────────────
-    // Use 2 months of Sem 2 as "current semester" demo data
-    const sem2DemoMonths = ['January', 'February'];
+    // ── Sem 2 demo data (Jan–Jun) ────────────────────────────────────────
+    const sem2DemoMonths = ['March', 'April'];
     const sem2Subjects = yearSubs[2] || [];
     sem2Subjects.forEach(sub => {
       sem2DemoMonths.forEach(month => {

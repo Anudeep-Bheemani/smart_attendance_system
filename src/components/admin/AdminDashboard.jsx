@@ -33,7 +33,7 @@ const AdminDashboard = ({ students, attendanceData, staffList }) => {
       
       return { ...s, percentage, totalHours: tot, attendedHours: att, trend };
     });
-  }, [students, attendanceData, selectedMonth]);
+  }, [students, attendanceData, selectedMonth, selectedSemester]);
 
   // Calculate college-wide stats (unfiltered)
   const collegeStats = useMemo(() => {

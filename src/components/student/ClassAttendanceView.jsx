@@ -4,20 +4,30 @@ import { calculatePercentage } from '../../utils';
 import RiskBadge from '../common/RiskBadge';
 import { downloadExcel, downloadPDF } from '../../utils/downloadReport';
 
+// Jul-Dec = Sem 1 | Jan-Jun = Sem 2
+const SEM_MONTHS = {
+  1: ['July','August','September','October','November','December'],
+  2: ['January','February','March','April','May','June']
+};
+
 export const ClassAttendanceView = ({ currentUser, allStudents, attendanceData }) => {
   const [sortMode, setSortMode] = useState('roll');
   const [filterMode, setFilterMode] = useState('all');
-  const [selectedSem, setSelectedSem] = useState('all');
+  const [selectedSem, setSelectedSem] = useState(() => new Date().getMonth() + 1 >= 7 ? '1' : '2');
+  const [selectedMonth, setSelectedMonth] = useState('all');
 
-  const classmates = allStudents.filter(s => 
-    s.branch === currentUser.branch && 
+  const semMonths = selectedSem === 'all' ? [...SEM_MONTHS[1], ...SEM_MONTHS[2]] : SEM_MONTHS[parseInt(selectedSem)];
+
+  const classmates = allStudents.filter(s =>
+    s.branch === currentUser.branch &&
     s.year === currentUser.year
   );
 
   const classmatesWithStats = classmates.map(student => {
     const records = attendanceData.filter(r => {
       const semMatch = selectedSem === 'all' || r.semester === parseInt(selectedSem);
-      return r.studentId === student.id && semMatch;
+      const monthMatch = selectedMonth === 'all' || r.month === selectedMonth;
+      return r.studentId === student.id && semMatch && monthMatch;
     });
     const totalConducted = records.reduce((acc, curr) => acc + curr.totalHours, 0);
     const totalAttended = records.reduce((acc, curr) => acc + curr.attendedHours, 0);
@@ -88,13 +98,13 @@ export const ClassAttendanceView = ({ currentUser, allStudents, attendanceData }
 
   return (
     <div className="space-y-6">
-      {/* Semester Filter */}
-      <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex items-center gap-3">
+      {/* Semester + Month Filter */}
+      <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex flex-wrap items-center gap-3">
         <span className="text-sm font-semibold text-slate-600">Semester:</span>
-        {[['all','All Sems'], ['1','Sem 1'], ['2','Sem 2']].map(([val, label]) => (
+        {[['1','Sem 1'], ['2','Sem 2']].map(([val, label]) => (
           <button
             key={val}
-            onClick={() => setSelectedSem(val)}
+            onClick={() => { setSelectedSem(val); setSelectedMonth('all'); }}
             className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
               selectedSem === val
                 ? 'bg-blue-600 text-white shadow'
@@ -104,6 +114,15 @@ export const ClassAttendanceView = ({ currentUser, allStudents, attendanceData }
             {label}
           </button>
         ))}
+        <span className="text-sm font-semibold text-slate-600 ml-2">Month:</span>
+        <select
+          value={selectedMonth}
+          onChange={(e) => setSelectedMonth(e.target.value)}
+          className="px-3 py-1.5 border border-slate-300 rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none bg-white text-slate-700"
+        >
+          <option value="all">All Months</option>
+          {semMonths.map(m => <option key={m} value={m}>{m}</option>)}
+        </select>
       </div>
 
       {/* Filter Cards */}
