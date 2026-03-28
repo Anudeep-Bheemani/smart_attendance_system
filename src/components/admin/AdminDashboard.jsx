@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, PieChart as RPieChart, Pie, Cell, LineChart, Line } from 'recharts';
-import { TrendingUp, TrendingDown, AlertTriangle, CheckCircle, XCircle, Search, Filter, ArrowUpDown, Calendar, Users, Activity, Bell, Download } from 'lucide-react';
-import RiskBadge from '../common/RiskBadge';
+import { TrendingUp, AlertTriangle, CheckCircle, XCircle, Search, Filter, ArrowUpDown, Calendar, Users, Activity, Bell, Download } from 'lucide-react';
+import StudentTable from '../common/StudentTable';
 import { calculatePercentage } from '../../utils';
 import { scheduleMonthEndReminders, sendMonthEndReminderToStaff, notifyAttendanceSaved } from '../../services/notificationService';
 import { downloadExcel, downloadPDF } from '../../utils/downloadReport';
@@ -498,60 +498,20 @@ const AdminDashboard = ({ students, attendanceData, staffList, semConfig }) => {
           </div>
         </div>
         
-        <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
-          <table className="w-full text-base text-left">
-            <thead className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200 sticky top-0">
-              <tr>
-                {sortBy === 'rank' && <th className="px-6 py-4">Rank</th>}
-                <th className="px-6 py-4">Roll No</th>
-                <th className="px-6 py-4">Student Name</th>
-                <th className="px-6 py-4">Attendance %</th>
-                <th className="px-6 py-4 text-center">Risk Status</th>
-                <th className="px-6 py-4 text-center">Trend</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {sortedStudents.map(student => {
-                return (
-                <tr key={student.id} className="hover:bg-slate-50 transition-colors">
-                  {sortBy === 'rank' && (
-                    <td className="px-6 py-4">
-                      <span className={`font-bold ${student.rank <= 3 ? 'text-amber-500' : 'text-slate-400'}`}>
-                        #{student.rank}
-                      </span>
-                    </td>
-                  )}
-                  <td className="px-6 py-4 font-mono text-slate-600">{student.rollNo}</td>
-                  <td className="px-6 py-4">
-                    <div className="font-medium text-slate-800">{student.name}</div>
-                    <div className="text-sm text-slate-500">{student.branch} • Year {student.year}</div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="flex-1 h-3 bg-slate-100 rounded-full overflow-hidden">
-                        <div 
-                          className={`h-full ${student.percentage >= 75 ? 'bg-green-500' : student.percentage >= 65 ? 'bg-orange-500' : 'bg-red-500'}`}
-                          style={{ width: `${student.percentage}%` }}
-                        />
-                      </div>
-                      <span className="font-bold text-slate-700 w-14">{student.percentage}%</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-center">
-                    <RiskBadge percent={student.percentage} />
-                  </td>
-                  <td className="px-6 py-4 text-center">
-                    {student.trend > 0 ? (
-                      <TrendingUp size={20} className="text-green-600 mx-auto" />
-                    ) : (
-                      <TrendingDown size={20} className="text-red-600 mx-auto" />
-                    )}
-                  </td>
-                </tr>
-              );})}
-            </tbody>
-          </table>
-        </div>
+        <StudentTable
+          rows={sortedStudents.map(s => ({
+            id: s.id, name: s.name, rollNo: s.rollNo,
+            branch: s.branch, year: s.year,
+            percentage: s.percentage,
+            totalHours: s.totalHours, attendedHours: s.attendedHours,
+            rank: s.rank, trend: s.trend,
+          }))}
+          showRank={sortBy === 'rank'}
+          showBranch
+          showHours
+          showTrend
+          onClearFilter={() => { setRiskFilter('all'); setSortBy('roll'); }}
+        />
       </div>
 
       {/* Recent Alerts Panel */}

@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Activity, Trophy, FileText, Download } from 'lucide-react';
+
 import { calculatePercentage } from '../../utils';
-import RiskBadge from '../common/RiskBadge';
+import StudentTable from '../common/StudentTable';
 import { downloadExcel, downloadPDF } from '../../utils/downloadReport';
 import AttendanceFilter, { getDefaultSem } from '../common/AttendanceFilter';
 
@@ -224,54 +225,17 @@ export const ClassAttendanceView = ({ currentUser, allStudents, attendanceData, 
          </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left">
-            <thead className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200">
-              <tr>
-                {sortMode === 'rank' && <th className="px-6 py-4 w-16">Rank</th>}
-                <th className="px-6 py-4">Student Name</th>
-                <th className="px-6 py-4">Roll Number</th>
-                <th className="px-6 py-4 text-center">Attendance %</th>
-                <th className="px-6 py-4 text-center">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {displayedStudents.map((student) => {
-                const isMe = student.id === currentUser.id;
-                return (
-                  <tr 
-                    key={student.id} 
-                    className={`${isMe ? 'bg-blue-50/60' : 'hover:bg-slate-50'} transition-colors`}
-                  >
-                    {sortMode === 'rank' && (
-                      <td className="px-6 py-4">
-                         <span className={`font-bold ${student.performanceRank <= 3 ? 'text-amber-500' : 'text-slate-400'}`}>
-                           #{student.performanceRank}
-                         </span>
-                      </td>
-                    )}
-                    <td className="px-6 py-4">
-                      <div className={`font-bold ${isMe ? 'text-blue-700' : 'text-slate-800'}`}>
-                        {student.name} {isMe && <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">You</span>}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 font-mono text-slate-500">
-                      {student.rollNo}
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                       <span className="font-bold text-slate-800 text-lg">{student.percentage}%</span>
-                    </td>
-                    <td className="px-6 py-4 text-center flex justify-center">
-                      <RiskBadge percent={student.percentage} />
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <StudentTable
+        rows={displayedStudents.map(s => ({
+          id: s.id, name: s.name, rollNo: s.rollNo,
+          percentage: s.percentage,
+          totalHours: s.totalConducted, attendedHours: s.totalAttended,
+          rank: s.performanceRank,
+        }))}
+        showRank={sortMode === 'rank'}
+        showHours
+        highlightId={currentUser.id}
+      />
     </div>
   );
 };

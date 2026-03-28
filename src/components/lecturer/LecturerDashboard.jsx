@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Sparkles, X, Loader2, Users, Download, Bell, TrendingUp, AlertTriangle, CheckCircle, BookOpen, BarChart3, Filter, ChevronDown } from 'lucide-react';
+import { Sparkles, X, Loader2, Users, Download, Bell, TrendingUp, AlertTriangle, CheckCircle, BookOpen, BarChart3 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart as RPieChart, Pie, Cell } from 'recharts';
 import { callGemini } from '../../services/gemini';
 import { api } from '../../api';
-import RiskBadge from '../common/RiskBadge';
+import StudentTable from '../common/StudentTable';
 import { downloadExcel, downloadPDF } from '../../utils/downloadReport';
 import AttendanceFilter, { getSemMonths } from '../common/AttendanceFilter';
 
@@ -422,73 +422,17 @@ const LecturerDashboard = ({ user, students, attendanceData, semConfig }) => {
           </div>
 
           {/* Table */}
-          <div className="overflow-x-auto">
-            {sortedStudents.length > 0 ? (
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="text-left text-xs font-semibold text-slate-400 uppercase tracking-wider border-b border-slate-100">
-                    {sortBy === 'rank' && <th className="px-6 py-3 w-16">Rank</th>}
-                    <th className="px-6 py-3">Student</th>
-                    <th className="px-6 py-3 text-right">Total Hrs</th>
-                    <th className="px-6 py-3 text-right">Attended</th>
-                    <th className="px-6 py-3 text-right">Percentage</th>
-                    <th className="px-6 py-3 text-center">Status</th>
-                    <th className="px-6 py-3 min-w-[140px]">Progress</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-50">
-                  {sortedStudents.map(s => (
-                    <tr key={s.id} className="hover:bg-slate-50 transition-colors">
-                      {sortBy === 'rank' && (
-                        <td className="px-6 py-4">
-                          <span className={`text-sm font-bold ${s.rank <= 3 ? 'text-amber-500' : 'text-slate-300'}`}>
-                            #{s.rank}
-                          </span>
-                        </td>
-                      )}
-                      <td className="px-6 py-4">
-                        <div className="font-semibold text-slate-800">{s.studentName}</div>
-                        <div className="text-xs text-slate-400 font-mono">{s.rollNo}</div>
-                      </td>
-                      <td className="px-6 py-4 text-right font-medium text-slate-600">{s.totalHours}</td>
-                      <td className="px-6 py-4 text-right font-medium text-blue-600">{s.attendedHours}</td>
-                      <td className="px-6 py-4 text-right">
-                        <span className={`text-base font-bold ${s.pct >= 75 ? 'text-emerald-600' : s.pct >= 65 ? 'text-amber-600' : 'text-red-600'}`}>
-                          {s.pct.toFixed(1)}%
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-center">
-                        <RiskBadge percent={s.pct} />
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2">
-                          <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                            <div
-                              className={`h-full rounded-full transition-all ${s.pct >= 75 ? 'bg-emerald-500' : s.pct >= 65 ? 'bg-amber-500' : 'bg-red-500'}`}
-                              style={{ width: `${Math.min(s.pct, 100)}%` }}
-                            />
-                          </div>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            ) : (
-              <div className="py-16 flex flex-col items-center justify-center text-slate-400">
-                <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center mb-3">
-                  <Filter size={20} className="text-slate-300" />
-                </div>
-                <p className="text-sm font-medium">No students match this filter</p>
-                <button
-                  onClick={() => setActiveFilter('all')}
-                  className="mt-2 text-blue-600 hover:underline text-xs"
-                >
-                  Clear filter
-                </button>
-              </div>
-            )}
-          </div>
+          <StudentTable
+            rows={sortedStudents.map(s => ({
+              id: s.id, name: s.studentName, rollNo: s.rollNo,
+              percentage: parseFloat(s.pct.toFixed(1)),
+              totalHours: s.totalHours, attendedHours: s.attendedHours,
+              rank: s.rank,
+            }))}
+            showRank={sortBy === 'rank'}
+            showHours
+            onClearFilter={() => setActiveFilter('all')}
+          />
         </div>
 
       </div>
