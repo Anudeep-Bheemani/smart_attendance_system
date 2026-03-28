@@ -51,6 +51,7 @@ const INITIAL_STUDENTS = [
     rollNo: `24CSE${101 + i}`, branch: "CSE", year: 1,
     dob: "2004-05-15", phone: "9876543210",
     guardianName: `Parent of Student ${i + 1}`, guardianPhone: "9988776655",
+    parentEmail: `parent.student${i + 1}@gmail.com`,
     verified: i === 0
   })),
   ...Array.from({ length: 4 }).map((_, i) => ({
@@ -59,6 +60,7 @@ const INITIAL_STUDENTS = [
     rollNo: `23CSE${101 + i}`, branch: "CSE", year: 2,
     dob: "2003-05-15", phone: "9876543210",
     guardianName: `Parent of CSE 2nd Year ${i + 1}`, guardianPhone: "9988776655",
+    parentEmail: `parent.cse2.${i + 1}@gmail.com`,
     verified: true
   })),
   ...Array.from({ length: 4 }).map((_, i) => ({
@@ -67,6 +69,7 @@ const INITIAL_STUDENTS = [
     rollNo: `23ECE${101 + i}`, branch: "ECE", year: 2,
     dob: "2003-05-15", phone: "9876543210",
     guardianName: `Parent of ECE Student ${i + 1}`, guardianPhone: "9988776655",
+    parentEmail: `parent.ece${i + 1}@gmail.com`,
     verified: true
   })),
   ...Array.from({ length: 3 }).map((_, i) => ({
@@ -75,6 +78,7 @@ const INITIAL_STUDENTS = [
     rollNo: `24MECH${101 + i}`, branch: "MECH", year: 1,
     dob: "2004-05-15", phone: "9876543210",
     guardianName: `Parent of MECH Student ${i + 1}`, guardianPhone: "9988776655",
+    parentEmail: `parent.mech${i + 1}@gmail.com`,
     verified: true
   })),
   ...Array.from({ length: 3 }).map((_, i) => ({
@@ -83,6 +87,7 @@ const INITIAL_STUDENTS = [
     rollNo: `22CSE${101 + i}`, branch: "CSE", year: 3,
     dob: "2002-05-15", phone: "9876543210",
     guardianName: `Parent of Senior CSE Student ${i + 1}`, guardianPhone: "9988776655",
+    parentEmail: `parent.senior.cse${i + 1}@gmail.com`,
     verified: true
   })),
   ...Array.from({ length: 4 }).map((_, i) => ({
@@ -91,6 +96,7 @@ const INITIAL_STUDENTS = [
     rollNo: `21CSE${101 + i}`, branch: "CSE", year: 4,
     dob: "2001-05-15", phone: "9876543210",
     guardianName: `Parent of Final Year CSE ${i + 1}`, guardianPhone: "9988776655",
+    parentEmail: `parent.final.cse${i + 1}@gmail.com`,
     verified: true
   }))
 ];

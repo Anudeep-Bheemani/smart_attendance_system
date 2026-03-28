@@ -16,7 +16,8 @@ const AdminStudentManagement = ({ students, branches, onAddStudent, onUpdateStud
     year: 1,
     dob: '',
     guardianName: '',
-    guardianPhone: ''
+    guardianPhone: '',
+    parentEmail: ''
   });
 
   const filteredStudents = useMemo(() => {
@@ -52,7 +53,8 @@ const AdminStudentManagement = ({ students, branches, onAddStudent, onUpdateStud
       year: 1,
       dob: '',
       guardianName: '',
-      guardianPhone: ''
+      guardianPhone: '',
+      parentEmail: ''
     });
     setShowModal(true);
   };
@@ -326,14 +328,30 @@ const AdminStudentManagement = ({ students, branches, onAddStudent, onUpdateStud
                   />
                 </div>
 
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Guardian Phone</label>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1 flex items-center gap-2">
+                    <Phone size={14} /> Guardian Phone
+                  </label>
                   <input
                     type="tel"
                     className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                     value={currentStudent.guardianPhone}
                     onChange={(e) => setCurrentStudent({ ...currentStudent, guardianPhone: e.target.value })}
                     placeholder="9988776655"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1 flex items-center gap-2">
+                    <Mail size={14} /> Parent Email
+                    <span className="text-xs text-slate-400 font-normal">(for attendance alerts)</span>
+                  </label>
+                  <input
+                    type="email"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                    value={currentStudent.parentEmail || ''}
+                    onChange={(e) => setCurrentStudent({ ...currentStudent, parentEmail: e.target.value })}
+                    placeholder="parent@gmail.com"
                   />
                 </div>
               </div>

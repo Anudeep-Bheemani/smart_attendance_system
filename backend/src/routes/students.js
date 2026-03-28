@@ -63,12 +63,12 @@ router.post('/verify', async (req, res) => {
 // POST /api/students
 router.post('/', authMiddleware, async (req, res) => {
   try {
-    const { name, rollNo, email, phone, branch, year, dob, guardianName, guardianPhone } = req.body;
+    const { name, rollNo, email, phone, branch, year, dob, guardianName, guardianPhone, parentEmail } = req.body;
     const id = `S${Date.now()}`;
     const hashed = await bcrypt.hash('pass', 10);
     const verificationToken = crypto.randomBytes(32).toString('hex');
     const student = await prisma.student.create({
-      data: { id, role: 'student', name, rollNo, email, phone, branch, year: parseInt(year), dob, guardianName, guardianPhone, password: hashed, verified: false, verificationToken }
+      data: { id, role: 'student', name, rollNo, email, phone, branch, year: parseInt(year), dob, guardianName, guardianPhone, parentEmail: parentEmail || null, password: hashed, verified: false, verificationToken }
     });
     // Send welcome email with real token link (non-blocking)
     sendVerificationEmail(student).catch(err => console.error('Verification email failed:', err.message));
@@ -83,7 +83,7 @@ router.post('/', authMiddleware, async (req, res) => {
 // PUT /api/students/:id
 router.put('/:id', authMiddleware, async (req, res) => {
   try {
-    const { name, rollNo, email, phone, branch, year, dob, guardianName, guardianPhone, photo } = req.body;
+    const { name, rollNo, email, phone, branch, year, dob, guardianName, guardianPhone, parentEmail, photo } = req.body;
     const data = {};
     if (name !== undefined) data.name = name;
     if (rollNo !== undefined) data.rollNo = rollNo;
@@ -94,6 +94,7 @@ router.put('/:id', authMiddleware, async (req, res) => {
     if (dob !== undefined) data.dob = dob;
     if (guardianName !== undefined) data.guardianName = guardianName;
     if (guardianPhone !== undefined) data.guardianPhone = guardianPhone;
+    if (parentEmail !== undefined) data.parentEmail = parentEmail || null;
     if (photo !== undefined) data.photo = photo;
 
     const student = await prisma.student.update({ where: { id: req.params.id }, data });
