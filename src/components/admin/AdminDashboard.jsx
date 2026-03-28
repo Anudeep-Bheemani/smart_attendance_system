@@ -5,21 +5,15 @@ import RiskBadge from '../common/RiskBadge';
 import { calculatePercentage } from '../../utils';
 import { scheduleMonthEndReminders, sendMonthEndReminderToStaff, notifyAttendanceSaved } from '../../services/notificationService';
 import { downloadExcel, downloadPDF } from '../../utils/downloadReport';
-
-const DEFAULT_SEM_MONTHS = {
-  1: ['July','August','September','October','November','December'],
-  2: ['January','February','March','April','May','June']
-};
-
-const getSemMonths = (semConfig, year, sem) =>
-  semConfig?.[String(year)]?.[String(sem)] || DEFAULT_SEM_MONTHS[sem] || [];
+import AttendanceFilter, { getDefaultSem } from '../common/AttendanceFilter';
 
 const AdminDashboard = ({ students, attendanceData, staffList, semConfig }) => {
   const [selectedYear, setSelectedYear] = useState('all');
   const [selectedBranch, setSelectedBranch] = useState('all');
-  const [selectedSemester, setSelectedSemester] = useState('all');
-  const [selectedMonth, setSelectedMonth] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+
+  const initSem = getDefaultSem(semConfig, 'all');
+  const [attFilter, setAttFilter] = useState({ semester: parseInt(initSem), activeMonths: [] });
   const [sortConfig, setSortConfig] = useState({ key: 'rollNo', direction: 'asc' });
   const [sortBy, setSortBy] = useState('roll');
   const [riskFilter, setRiskFilter] = useState('all');
@@ -27,11 +21,11 @@ const AdminDashboard = ({ students, attendanceData, staffList, semConfig }) => {
   // Calculate student statistics
   const studentStats = useMemo(() => {
     return students.map(s => {
-      const records = attendanceData.filter(r => {
-        const monthMatch = selectedMonth === 'all' || r.month === selectedMonth;
-        const semMatch = selectedSemester === 'all' || r.semester === parseInt(selectedSemester);
-        return r.studentId === s.id && monthMatch && semMatch;
-      });
+      const records = attendanceData.filter(r =>
+        r.studentId === s.id &&
+        r.semester === attFilter.semester &&
+        (attFilter.activeMonths.length === 0 || attFilter.activeMonths.includes(r.month))
+      );
       if (records.length === 0) return { ...s, percentage: 0, totalHours: 0, attendedHours: 0, trend: 0 };
       
       const tot = records.reduce((a, b) => a + b.totalHours, 0);
@@ -41,7 +35,7 @@ const AdminDashboard = ({ students, attendanceData, staffList, semConfig }) => {
       
       return { ...s, percentage, totalHours: tot, attendedHours: att, trend };
     });
-  }, [students, attendanceData, selectedMonth, selectedSemester]);
+  }, [students, attendanceData, attFilter.semester, attFilter.activeMonths]);
 
   // Calculate college-wide stats (unfiltered)
   const collegeStats = useMemo(() => {
@@ -180,14 +174,6 @@ const AdminDashboard = ({ students, attendanceData, staffList, semConfig }) => {
 
   const branches = ['CSE', 'ECE', 'MECH', 'CIVIL', 'EEE'];
   const years = ['1', '2', '3', '4'];
-  // Show months for selected semester; if a specific year is selected use that year's config,
-  // otherwise union months from all years for that semester
-  const semesterMonths = selectedSemester === 'all'
-    ? [...new Set(attendanceData.map(r => r.month))].filter(Boolean)
-    : selectedYear !== 'all'
-      ? getSemMonths(semConfig, selectedYear, parseInt(selectedSemester))
-      : [...new Set(['1','2','3','4'].flatMap(y => getSemMonths(semConfig, y, parseInt(selectedSemester))))];
-  const months = semesterMonths;
 
   return (
     <div className="space-y-6">
@@ -398,32 +384,23 @@ const AdminDashboard = ({ students, attendanceData, staffList, semConfig }) => {
         </div>
       </div>
 
+      {/* Attendance Filter */}
+      <AttendanceFilter
+        key={selectedYear}
+        semConfig={semConfig}
+        year={selectedYear}
+        defaultSem={initSem}
+        onChange={setAttFilter}
+      />
+
       {/* Filter Control Panel */}
       <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
         <div className="flex items-center gap-2 text-slate-700 font-semibold mb-4">
           <Filter size={18} />
-          <span>Filters</span>
+          <span>Additional Filters</span>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           <select
-            className="px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm font-medium"
-            value={selectedSemester}
-            onChange={(e) => setSelectedSemester(e.target.value)}
-          >
-            <option value="all">All Sems</option>
-            <option value="1">Sem 1</option>
-            <option value="2">Sem 2</option>
-          </select>
-          <select
-            className="px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm font-medium"
-            value={selectedMonth}
-            onChange={(e) => setSelectedMonth(e.target.value)}
-          >
-            <option value="all">All Months</option>
-            {months.map(m => <option key={m} value={m}>{m}</option>)}
-          </select>
-
-          <select 
             className="px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm font-medium"
             value={selectedYear}
             onChange={(e) => setSelectedYear(e.target.value)}
@@ -432,7 +409,7 @@ const AdminDashboard = ({ students, attendanceData, staffList, semConfig }) => {
             {years.map(y => <option key={y} value={y}>Year {y}</option>)}
           </select>
 
-          <select 
+          <select
             className="px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm font-medium"
             value={selectedBranch}
             onChange={(e) => setSelectedBranch(e.target.value)}
@@ -441,7 +418,7 @@ const AdminDashboard = ({ students, attendanceData, staffList, semConfig }) => {
             {branches.map(b => <option key={b} value={b}>{b}</option>)}
           </select>
 
-          <select 
+          <select
             className="px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm font-medium"
             value={riskFilter}
             onChange={(e) => setRiskFilter(e.target.value)}
@@ -464,7 +441,7 @@ const AdminDashboard = ({ students, attendanceData, staffList, semConfig }) => {
 
           <div className="relative">
             <Search className="absolute left-3 top-3 text-slate-400" size={18} />
-            <input 
+            <input
               type="text"
               placeholder="Search..."
               className="w-full pl-10 pr-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
@@ -473,15 +450,11 @@ const AdminDashboard = ({ students, attendanceData, staffList, semConfig }) => {
             />
           </div>
         </div>
-        
+
         <div className="flex items-center justify-between mt-4 pt-4 border-t border-slate-100">
           <div className="flex items-center gap-3">
-            <button className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors shadow-sm">
-              Apply Filters
-            </button>
-            <button 
+            <button
               onClick={() => {
-                setSelectedMonth('all');
                 setSelectedYear('all');
                 setSelectedBranch('all');
                 setRiskFilter('all');

@@ -5,14 +5,7 @@ import { callGemini } from '../../services/gemini';
 import { api } from '../../api';
 import RiskBadge from '../common/RiskBadge';
 import { downloadExcel, downloadPDF } from '../../utils/downloadReport';
-
-const DEFAULT_SEM_MONTHS = {
-  1: ['July','August','September','October','November','December'],
-  2: ['January','February','March','April','May','June']
-};
-
-const getSemMonths = (semConfig, year, sem) =>
-  semConfig?.[String(year)]?.[String(sem)] || DEFAULT_SEM_MONTHS[sem] || [];
+import AttendanceFilter, { getSemMonths } from '../common/AttendanceFilter';
 
 const LecturerDashboard = ({ user, students, attendanceData, semConfig }) => {
   const [aiReport, setAiReport] = useState(null);
@@ -22,69 +15,37 @@ const LecturerDashboard = ({ user, students, attendanceData, semConfig }) => {
   const [activeFilter, setActiveFilter] = useState('all');
   const [sortBy, setSortBy] = useState('name');
   const [selectedBranch, setSelectedBranch] = useState(user.branch || 'CSE');
-  const [selectedYear, setSelectedYear] = useState(String(user.academicYear || '1'));
-  const [selectedSemester, setSelectedSemester] = useState(() => {
-    // Jul-Dec = Sem1, Jan-Jun = Sem2 → academic year: Jan-Jun then Jul-Dec
-    const ACADEMIC_ORDER = {
-      'January': 1, 'February': 2, 'March': 3, 'April': 4, 'May': 5, 'June': 6,
-      'July': 7, 'August': 8, 'September': 9, 'October': 10, 'November': 11, 'December': 12
-    };
+  const [selectedYear,   setSelectedYear]   = useState(String(user.academicYear || '1'));
+
+  // Smart default semester — based on most recent attendance record for this class
+  const initSem = (() => {
+    const MONTH_ORDER = { January:1,February:2,March:3,April:4,May:5,June:6,July:7,August:8,September:9,October:10,November:11,December:12 };
     const initBranch = user.branch || '';
-    const initYear = parseInt(user.academicYear || '1');
-    const classRecords = attendanceData.filter(r => {
-      const student = students.find(st => st.id === r.studentId);
-      return student?.branch === initBranch && student?.year === initYear;
+    const initYear   = parseInt(user.academicYear || '1');
+    const recs = attendanceData.filter(r => {
+      const s = students.find(st => st.id === r.studentId);
+      return s?.branch === initBranch && s?.year === initYear;
     });
-    if (classRecords.length === 0) {
-      // fallback: current month determines semester
-      const m = new Date().getMonth() + 1;
-      return m >= 7 ? '1' : '2';
-    }
-    const latest = classRecords.reduce((best, r) =>
-      (ACADEMIC_ORDER[r.month] || 0) > (ACADEMIC_ORDER[best.month] || 0) ? r : best
-    );
+    if (!recs.length) { const m = new Date().getMonth()+1; return m >= 7 ? '1' : '2'; }
+    const latest = recs.reduce((best, r) => (MONTH_ORDER[r.month]||0) > (MONTH_ORDER[best.month]||0) ? r : best);
     return String(latest.semester);
-  });
+  })();
+
+  const [attFilter, setAttFilter] = useState(() => ({
+    semester: parseInt(initSem),
+    activeMonths: getSemMonths(semConfig, String(user.academicYear || '1'), parseInt(initSem))
+  }));
+
   const allBranches = [...new Set(students.map(s => s.branch))].filter(Boolean).sort();
-  const semMonths = getSemMonths(semConfig, selectedYear, parseInt(selectedSemester));
-
-  // Range-of-months filter: fromMonth/toMonth default to full semester
-  const [fromMonth, setFromMonth] = useState(() => semMonths[0] || '');
-  const [toMonth, setToMonth] = useState(() => semMonths[semMonths.length - 1] || '');
-
-  // When semMonths changes (semester/year switch), reset range to full semester
-  const handleSemesterChange = (val) => {
-    setSelectedSemester(val);
-    const months = getSemMonths(semConfig, selectedYear, parseInt(val));
-    setFromMonth(months[0] || '');
-    setToMonth(months[months.length - 1] || '');
-  };
-  const handleYearChange = (val) => {
-    setSelectedYear(val);
-    const months = getSemMonths(semConfig, val, parseInt(selectedSemester));
-    setFromMonth(months[0] || '');
-    setToMonth(months[months.length - 1] || '');
-  };
-  const handleBranchChange = (val) => {
-    setSelectedBranch(val);
-  };
-
-  // Months included in the selected range
-  const fromIdx = semMonths.indexOf(fromMonth);
-  const toIdx = semMonths.indexOf(toMonth);
-  const activeMonths = semMonths.slice(
-    fromIdx >= 0 ? fromIdx : 0,
-    toIdx >= 0 ? toIdx + 1 : semMonths.length
-  );
-
   const currentClass = `${selectedBranch} — Year ${selectedYear}`;
 
-  // Records for selected class + semester + month range
+  // Records for selected class + semester + active months
   const classRecords = attendanceData.filter(r => {
     const student = students.find(st => st.id === r.studentId);
-    const semMatch = r.semester === parseInt(selectedSemester);
-    const monthMatch = activeMonths.length === 0 || activeMonths.includes(r.month);
-    return student?.branch === selectedBranch && student?.year === parseInt(selectedYear) && semMatch && monthMatch;
+    return student?.branch === selectedBranch
+      && student?.year === parseInt(selectedYear)
+      && r.semester === attFilter.semester
+      && attFilter.activeMonths.includes(r.month);
   });
 
   const classStudents = students.filter(s => s.branch === selectedBranch && s.year === parseInt(selectedYear));
@@ -192,29 +153,21 @@ const LecturerDashboard = ({ user, students, attendanceData, semConfig }) => {
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          {/* Class selectors */}
+          {/* Class selectors — Branch + Year only; Sem is in AttendanceFilter below */}
           <div className="flex items-center gap-2 bg-slate-100 rounded-xl p-1">
             <select
               value={selectedBranch}
-              onChange={(e) => handleBranchChange(e.target.value)}
+              onChange={(e) => setSelectedBranch(e.target.value)}
               className="bg-white border border-slate-200 text-slate-700 text-sm font-semibold rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500"
             >
               {allBranches.map(b => <option key={b} value={b}>{b}</option>)}
             </select>
             <select
               value={selectedYear}
-              onChange={(e) => handleYearChange(e.target.value)}
+              onChange={(e) => setSelectedYear(e.target.value)}
               className="bg-white border border-slate-200 text-slate-700 text-sm font-semibold rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500"
             >
               {['1','2','3','4'].map(y => <option key={y} value={y}>Year {y}</option>)}
-            </select>
-            <select
-              value={selectedSemester}
-              onChange={(e) => handleSemesterChange(e.target.value)}
-              className="bg-white border border-slate-200 text-slate-700 text-sm font-semibold rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="1">Sem 1</option>
-              <option value="2">Sem 2</option>
             </select>
           </div>
 
@@ -227,8 +180,8 @@ const LecturerDashboard = ({ user, students, attendanceData, semConfig }) => {
                 const result = await api.sendAttendanceEmails({
                   branch: selectedBranch,
                   year: selectedYear,
-                  semester: selectedSemester,
-                  month: selectedMonth,
+                  semester: String(attFilter.semester),
+                  month: attFilter.activeMonths.length === 1 ? attFilter.activeMonths[0] : 'all',
                 });
                 alert(`✅ ${result.message}`);
               } catch (err) {
@@ -281,6 +234,15 @@ const LecturerDashboard = ({ user, students, attendanceData, semConfig }) => {
       )}
 
       <div className="px-8 py-6 space-y-6">
+
+        {/* ── Attendance Filter ────────────────────────────────────────────── */}
+        <AttendanceFilter
+          key={selectedYear}
+          semConfig={semConfig}
+          year={selectedYear}
+          defaultSem={initSem}
+          onChange={setAttFilter}
+        />
 
         {/* ── KPI Cards ───────────────────────────────────────────────────── */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -408,33 +370,6 @@ const LecturerDashboard = ({ user, students, attendanceData, semConfig }) => {
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
-              {/* Month range filter */}
-              <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-500">From</div>
-              <select
-                value={fromMonth}
-                onChange={(e) => {
-                  setFromMonth(e.target.value);
-                  const fi = semMonths.indexOf(e.target.value);
-                  const ti = semMonths.indexOf(toMonth);
-                  if (ti < fi) setToMonth(e.target.value);
-                }}
-                className="text-sm border border-slate-200 bg-white text-slate-700 font-medium rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                {semMonths.map(m => <option key={m} value={m}>{m}</option>)}
-              </select>
-              <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-500">To</div>
-              <select
-                value={toMonth}
-                onChange={(e) => {
-                  setToMonth(e.target.value);
-                  const fi = semMonths.indexOf(fromMonth);
-                  const ti = semMonths.indexOf(e.target.value);
-                  if (fi > ti) setFromMonth(e.target.value);
-                }}
-                className="text-sm border border-slate-200 bg-white text-slate-700 font-medium rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                {semMonths.map(m => <option key={m} value={m}>{m}</option>)}
-              </select>
 
               {/* Sort */}
               <select

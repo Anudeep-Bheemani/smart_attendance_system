@@ -3,26 +3,14 @@ import { Activity, Trophy, FileText, Download } from 'lucide-react';
 import { calculatePercentage } from '../../utils';
 import RiskBadge from '../common/RiskBadge';
 import { downloadExcel, downloadPDF } from '../../utils/downloadReport';
-
-const DEFAULT_SEM_MONTHS = {
-  1: ['July','August','September','October','November','December'],
-  2: ['January','February','March','April','May','June']
-};
-
-const getSemMonths = (semConfig, year, sem) =>
-  semConfig?.[String(year)]?.[String(sem)] || DEFAULT_SEM_MONTHS[sem] || [];
+import AttendanceFilter, { getDefaultSem } from '../common/AttendanceFilter';
 
 export const ClassAttendanceView = ({ currentUser, allStudents, attendanceData, semConfig }) => {
   const [sortMode, setSortMode] = useState('roll');
   const [filterMode, setFilterMode] = useState('all');
-  const [selectedSem, setSelectedSem] = useState(() => {
-    const currentMonth = new Date().toLocaleString('default', { month: 'long' });
-    const sem1Months = getSemMonths(semConfig, currentUser?.year, 1);
-    return sem1Months.includes(currentMonth) ? '1' : '2';
-  });
-  const [selectedMonth, setSelectedMonth] = useState('all');
 
-  const semMonths = getSemMonths(semConfig, currentUser?.year, parseInt(selectedSem));
+  const initSem = getDefaultSem(semConfig, currentUser?.year);
+  const [attFilter, setAttFilter] = useState({ semester: parseInt(initSem), activeMonths: [] });
 
   const classmates = allStudents.filter(s =>
     s.branch === currentUser.branch &&
@@ -30,11 +18,11 @@ export const ClassAttendanceView = ({ currentUser, allStudents, attendanceData, 
   );
 
   const classmatesWithStats = classmates.map(student => {
-    const records = attendanceData.filter(r => {
-      const semMatch = r.semester === parseInt(selectedSem);
-      const monthMatch = selectedMonth === 'all' || r.month === selectedMonth;
-      return r.studentId === student.id && semMatch && monthMatch;
-    });
+    const records = attendanceData.filter(r =>
+      r.studentId === student.id &&
+      r.semester === attFilter.semester &&
+      (attFilter.activeMonths.length === 0 || attFilter.activeMonths.includes(r.month))
+    );
     const totalConducted = records.reduce((acc, curr) => acc + curr.totalHours, 0);
     const totalAttended = records.reduce((acc, curr) => acc + curr.attendedHours, 0);
     const percentage = parseFloat(calculatePercentage(totalAttended, totalConducted));
@@ -104,32 +92,13 @@ export const ClassAttendanceView = ({ currentUser, allStudents, attendanceData, 
 
   return (
     <div className="space-y-6">
-      {/* Semester + Month Filter */}
-      <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex flex-wrap items-center gap-3">
-        <span className="text-sm font-semibold text-slate-600">Semester:</span>
-        {[['1','Sem 1'], ['2','Sem 2']].map(([val, label]) => (
-          <button
-            key={val}
-            onClick={() => { setSelectedSem(val); setSelectedMonth('all'); }}
-            className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
-              selectedSem === val
-                ? 'bg-blue-600 text-white shadow'
-                : 'bg-slate-100 text-slate-600 hover:bg-blue-50 hover:text-blue-600'
-            }`}
-          >
-            {label}
-          </button>
-        ))}
-        <span className="text-sm font-semibold text-slate-600 ml-2">Month:</span>
-        <select
-          value={selectedMonth}
-          onChange={(e) => setSelectedMonth(e.target.value)}
-          className="px-3 py-1.5 border border-slate-300 rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none bg-white text-slate-700"
-        >
-          <option value="all">All Months</option>
-          {semMonths.map(m => <option key={m} value={m}>{m}</option>)}
-        </select>
-      </div>
+      {/* Attendance Filter */}
+      <AttendanceFilter
+        semConfig={semConfig}
+        year={currentUser?.year}
+        defaultSem={initSem}
+        onChange={setAttFilter}
+      />
 
       {/* Filter Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
