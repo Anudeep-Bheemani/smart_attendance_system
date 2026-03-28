@@ -216,4 +216,53 @@ const sendAttendanceReportToParent = async (student, records, period) => {
   });
 };
 
-module.exports = { sendVerificationEmail, sendAttendanceReportToStudent, sendAttendanceReportToParent };
+// ── Staff Reminder Email ──────────────────────────────────────────────────────
+
+const sendStaffReminderEmail = async (staff) => {
+  const html = `
+  <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #f8fafc; padding: 32px 16px;">
+    <div style="background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.08);">
+
+      <div style="background: linear-gradient(135deg, #1e40af, #3b82f6); padding: 32px 40px;">
+        <div style="font-size: 22px; font-weight: 900; color: white;">SmartAttd</div>
+        <div style="color: #bfdbfe; font-size: 13px;">Admin Notification — Attendance Entry Reminder</div>
+      </div>
+
+      <div style="padding: 36px 40px;">
+        <p style="color: #64748b; font-size: 15px; margin: 0 0 6px;">Dear <strong style="color: #1e293b;">${staff.name}</strong>,</p>
+        <p style="color: #64748b; font-size: 14px; margin: 0 0 24px;">This is a reminder from the administration to please ensure all attendance records for your assigned classes are updated before the end of this month.</p>
+
+        <div style="background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 8px; padding: 16px; margin-bottom: 24px;">
+          <p style="color: #92400e; font-size: 13px; margin: 0; font-weight: 700;">📋 Action Required</p>
+          <p style="color: #78350f; font-size: 13px; margin: 6px 0 0;">Please log in to SmartAttd and verify that all subject attendance entries are complete and accurate.</p>
+        </div>
+
+        <div style="background: #f1f5f9; border-radius: 12px; padding: 16px; margin-bottom: 24px;">
+          <table style="width: 100%; border-collapse: collapse;">
+            <tr>
+              <td style="color: #94a3b8; font-size: 12px; font-weight: 600; text-transform: uppercase; padding: 6px 0;">Staff Name</td>
+              <td style="color: #1e293b; font-size: 14px; font-weight: 700; padding: 6px 0;">${staff.name}</td>
+            </tr>
+            <tr>
+              <td style="color: #94a3b8; font-size: 12px; font-weight: 600; text-transform: uppercase; padding: 6px 0;">Department</td>
+              <td style="color: #1e293b; font-size: 14px; font-weight: 700; padding: 6px 0;">${staff.branch || 'N/A'}</td>
+            </tr>
+          </table>
+        </div>
+
+        <div style="border-top: 1px solid #e2e8f0; padding-top: 20px;">
+          <p style="color: #94a3b8; font-size: 12px; margin: 0;">This is an automated message from SmartAttd Administration. Please do not reply to this email.</p>
+        </div>
+      </div>
+    </div>
+  </div>`;
+
+  await transporter.sendMail({
+    from: `"SmartAttd Admin" <${process.env.GMAIL_USER}>`,
+    to: staff.email,
+    subject: `Action Required: Please Update Attendance Records — SmartAttd`,
+    html,
+  });
+};
+
+module.exports = { sendVerificationEmail, sendAttendanceReportToStudent, sendAttendanceReportToParent, sendStaffReminderEmail };

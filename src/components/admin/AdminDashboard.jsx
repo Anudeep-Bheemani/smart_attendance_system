@@ -1,15 +1,17 @@
 import React, { useState, useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, PieChart as RPieChart, Pie, Cell, LineChart, Line } from 'recharts';
-import { TrendingUp, AlertTriangle, CheckCircle, XCircle, Search, Filter, ArrowUpDown, Calendar, Users, Activity, Bell, Download } from 'lucide-react';
+import { TrendingUp, AlertTriangle, CheckCircle, XCircle, Search, Filter, ArrowUpDown, Calendar, Users, Activity, Bell, Download, Loader2 } from 'lucide-react';
 import StudentTable from '../common/StudentTable';
 import { calculatePercentage } from '../../utils';
-import { scheduleMonthEndReminders, sendMonthEndReminderToStaff, notifyAttendanceSaved } from '../../services/notificationService';
+import { api } from '../../api';
 import { downloadExcel, downloadPDF } from '../../utils/downloadReport';
 import AttendanceFilter, { getDefaultSem } from '../common/AttendanceFilter';
 
 const AdminDashboard = ({ students, attendanceData, staffList, semConfig }) => {
   const [selectedYear, setSelectedYear] = useState('all');
   const [selectedBranch, setSelectedBranch] = useState('all');
+  const [isSendingStudentEmails, setIsSendingStudentEmails] = useState(false);
+  const [isSendingStaffEmails, setIsSendingStaffEmails] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
   const initSem = getDefaultSem(semConfig, 'all');
@@ -526,34 +528,46 @@ const AdminDashboard = ({ students, attendanceData, staffList, semConfig }) => {
         <div className="p-4 space-y-3 max-h-[500px] overflow-y-auto">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <button
-              onClick={() => {
-                const result = notifyAttendanceSaved(students, attendanceData, []);
-                console.log('\n📧 MONTHLY REPORTS SENT\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-                console.log(`✅ ${students.length} students received attendance reports`);
-                console.log(`✅ ${students.filter(s => s.guardianName).length} parents received attendance reports`);
-                console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-                alert(`📧 Monthly Reports Sent Successfully!\n\n✅ Students: ${students.length} emails\n✅ Parents: ${students.filter(s => s.guardianName).length} emails\n\nTotal: ${result.count} emails sent\n\n💡 Check console for details`);
+              disabled={isSendingStudentEmails}
+              onClick={async () => {
+                setIsSendingStudentEmails(true);
+                try {
+                  const result = await api.sendAttendanceEmails({
+                    branch: selectedBranch === 'all' ? 'all' : selectedBranch,
+                    year: selectedYear === 'all' ? 'all' : selectedYear,
+                    semester: attFilter.semester === null ? 'all' : String(attFilter.semester),
+                    month: attFilter.activeMonths.length === 1 ? attFilter.activeMonths[0] : 'all',
+                  });
+                  alert(`✅ ${result.message}`);
+                } catch (err) {
+                  alert(`❌ Failed to send emails: ${err.message}`);
+                } finally {
+                  setIsSendingStudentEmails(false);
+                }
               }}
-              className="px-4 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 shadow-md"
+              className="px-4 py-3 bg-green-600 hover:bg-green-700 disabled:opacity-60 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 shadow-md"
             >
-              <Bell size={16} />
-              Send Student/Parent Reports
+              {isSendingStudentEmails ? <Loader2 size={16} className="animate-spin" /> : <Bell size={16} />}
+              {isSendingStudentEmails ? 'Sending...' : 'Send Student & Parent Reports'}
             </button>
-            
+
             <button
-              onClick={() => {
-                (staffList || []).forEach(staff => {
-                  sendMonthEndReminderToStaff(staff.email, staff.name);
-                });
-                console.log('\n📧 LECTURER REMINDERS SENT\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-                console.log(`✅ ${(staffList || []).length} lecturers received attendance entry reminders`);
-                console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-                alert(`📧 Lecturer Reminders Sent Successfully!\n\n✅ Lecturers: ${(staffList || []).length} emails\n\nReminder: Fill attendance sheets before month end\n\n💡 Check console for details`);
+              disabled={isSendingStaffEmails}
+              onClick={async () => {
+                setIsSendingStaffEmails(true);
+                try {
+                  const result = await api.sendStaffEmails();
+                  alert(`✅ ${result.message}`);
+                } catch (err) {
+                  alert(`❌ Failed to send reminders: ${err.message}`);
+                } finally {
+                  setIsSendingStaffEmails(false);
+                }
               }}
-              className="px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 shadow-md"
+              className="px-4 py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 shadow-md"
             >
-              <Bell size={16} />
-              Send Lecturer Reminders
+              {isSendingStaffEmails ? <Loader2 size={16} className="animate-spin" /> : <Bell size={16} />}
+              {isSendingStaffEmails ? 'Sending...' : 'Send Staff Reminders'}
             </button>
           </div>
           {recentAlerts.map(alert => (

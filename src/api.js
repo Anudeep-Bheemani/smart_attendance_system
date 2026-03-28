@@ -97,6 +97,9 @@ export const api = {
   sendAttendanceEmails: ({ branch, year, semester, month }) =>
     fetch(`${API_URL}/notifications/send-attendance`, { method: 'POST', headers: headers(), body: JSON.stringify({ branch, year, semester, month }) }).then(handleResponse),
 
+  sendStaffEmails: () =>
+    fetch(`${API_URL}/notifications/send-staff-reminder`, { method: 'POST', headers: headers() }).then(handleResponse),
+
   // Sem Config
   getSemConfig: () =>
     fetch(`${API_URL}/sem-config`).then(handleResponse),

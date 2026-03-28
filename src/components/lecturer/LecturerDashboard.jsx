@@ -180,7 +180,7 @@ const LecturerDashboard = ({ user, students, attendanceData, semConfig }) => {
                 const result = await api.sendAttendanceEmails({
                   branch: selectedBranch,
                   year: selectedYear,
-                  semester: String(attFilter.semester),
+                  semester: attFilter.semester === null ? 'all' : String(attFilter.semester),
                   month: attFilter.activeMonths.length === 1 ? attFilter.activeMonths[0] : 'all',
                 });
                 alert(`✅ ${result.message}`);
