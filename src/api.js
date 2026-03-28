@@ -59,6 +59,9 @@ export const api = {
   deleteStaff: (id) =>
     fetch(`${API_URL}/staff/${id}`, { method: 'DELETE', headers: headers() }).then(handleResponse),
 
+  changeStaffPassword: (currentPassword, newPassword) =>
+    fetch(`${API_URL}/staff/change-password`, { method: 'POST', headers: headers(), body: JSON.stringify({ currentPassword, newPassword }) }).then(handleResponse),
+
   // Branches
   getBranches: () =>
     fetch(`${API_URL}/branches`, { headers: headers() }).then(handleResponse),

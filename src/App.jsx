@@ -305,6 +305,7 @@ const MainApp = () => {
           return (
             <AdminStaffManager
               staffList={staffList}
+              branches={branches.map(b => typeof b === 'string' ? b : b.name)}
               onAddStaff={handleAddStaff}
               onUpdateStaff={handleUpdateStaff}
               onDeleteStaff={handleDeleteStaff}

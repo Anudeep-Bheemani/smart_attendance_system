@@ -50,13 +50,35 @@ router.put('/:id', authMiddleware, async (req, res) => {
     if (subjects !== undefined) data.subjects = subjects;
     if (branch !== undefined) data.branch = branch;
     if (academicYear !== undefined) data.academicYear = academicYear;
-    if (assignedClass !== undefined) data.assignedClass = assignedClass;
     if (password) data.password = await bcrypt.hash(password, 10);
+
+    // Auto-compute assignedClass if branch or academicYear changed
+    const existing = await prisma.staff.findUnique({ where: { id: req.params.id } });
+    const finalBranch = branch !== undefined ? branch : existing?.branch;
+    const finalYear = academicYear !== undefined ? academicYear : existing?.academicYear;
+    if (finalBranch && finalYear) data.assignedClass = `${finalBranch}-${finalYear}`;
+    else if (assignedClass !== undefined) data.assignedClass = assignedClass;
 
     const staff = await prisma.staff.update({ where: { id: req.params.id }, data });
     res.json(omitPassword(staff));
   } catch (err) {
     if (err.code === 'P2025') return res.status(404).json({ error: 'Not found' });
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// POST /api/staff/change-password
+router.post('/change-password', authMiddleware, async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    const staff = await prisma.staff.findUnique({ where: { id: req.user.id } });
+    if (!staff) return res.status(404).json({ error: 'Not found' });
+    const valid = await bcrypt.compare(currentPassword, staff.password);
+    if (!valid) return res.status(400).json({ error: 'Current password is incorrect' });
+    if (!newPassword || newPassword.length < 4) return res.status(400).json({ error: 'Password must be at least 4 characters' });
+    await prisma.staff.update({ where: { id: staff.id }, data: { password: await bcrypt.hash(newPassword, 10) } });
+    res.json({ success: true });
+  } catch (err) {
     res.status(500).json({ error: 'Server error' });
   }
 });

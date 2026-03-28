@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Lock, User, Mail, Save, Eye, EyeOff, Users } from 'lucide-react';
+import { api } from '../../api';
 
 const LecturerSettings = ({ user, onUpdateProfile, branches }) => {
   const [name, setName] = useState(user.name);
@@ -13,15 +14,12 @@ const LecturerSettings = ({ user, onUpdateProfile, branches }) => {
 
   const handleUpdateProfile = (e) => {
     e.preventDefault();
-    onUpdateProfile({ ...user, name, email, branch, academicYear: year });
+    const assignedClass = branch && year ? `${branch}-${year}` : user.assignedClass;
+    onUpdateProfile({ ...user, name, email, branch, academicYear: year, assignedClass });
   };
 
-  const handleChangePassword = (e) => {
+  const handleChangePassword = async (e) => {
     e.preventDefault();
-    if (currentPassword !== user.password) {
-      alert('Current password is incorrect');
-      return;
-    }
     if (newPassword !== confirmPassword) {
       alert('New passwords do not match');
       return;
@@ -30,10 +28,15 @@ const LecturerSettings = ({ user, onUpdateProfile, branches }) => {
       alert('Password must be at least 4 characters');
       return;
     }
-    onUpdateProfile({ ...user, password: newPassword });
-    setCurrentPassword('');
-    setNewPassword('');
-    setConfirmPassword('');
+    try {
+      await api.changeStaffPassword(currentPassword, newPassword);
+      alert('Password updated successfully!');
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (err) {
+      alert(err.message || 'Failed to update password');
+    }
   };
 
   return (
