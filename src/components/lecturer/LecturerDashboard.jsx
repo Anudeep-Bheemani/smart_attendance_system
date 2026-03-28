@@ -44,7 +44,7 @@ const LecturerDashboard = ({ user, students, attendanceData, semConfig }) => {
     const student = students.find(st => st.id === r.studentId);
     return student?.branch === selectedBranch
       && student?.year === parseInt(selectedYear)
-      && r.semester === attFilter.semester
+      && (attFilter.semester === null || r.semester === attFilter.semester)
       && attFilter.activeMonths.includes(r.month);
   });
 

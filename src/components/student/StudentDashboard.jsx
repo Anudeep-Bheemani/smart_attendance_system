@@ -21,7 +21,7 @@ const StudentDashboard = ({ student, attendanceData, onUpdateProfile, isReadOnly
   const myRaw = attendanceData.filter(r => r.studentId === student.id);
 
   const myAttendance = myRaw.filter(r =>
-    r.semester === attFilter.semester &&
+    (attFilter.semester === null || r.semester === attFilter.semester) &&
     (attFilter.activeMonths.length === 0 || attFilter.activeMonths.includes(r.month))
   );
   

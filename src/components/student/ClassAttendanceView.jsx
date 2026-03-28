@@ -20,7 +20,7 @@ export const ClassAttendanceView = ({ currentUser, allStudents, attendanceData, 
   const classmatesWithStats = classmates.map(student => {
     const records = attendanceData.filter(r =>
       r.studentId === student.id &&
-      r.semester === attFilter.semester &&
+      (attFilter.semester === null || r.semester === attFilter.semester) &&
       (attFilter.activeMonths.length === 0 || attFilter.activeMonths.includes(r.month))
     );
     const totalConducted = records.reduce((acc, curr) => acc + curr.totalHours, 0);

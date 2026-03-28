@@ -23,7 +23,7 @@ const AdminDashboard = ({ students, attendanceData, staffList, semConfig }) => {
     return students.map(s => {
       const records = attendanceData.filter(r =>
         r.studentId === s.id &&
-        r.semester === attFilter.semester &&
+        (attFilter.semester === null || r.semester === attFilter.semester) &&
         (attFilter.activeMonths.length === 0 || attFilter.activeMonths.includes(r.month))
       );
       if (records.length === 0) return { ...s, percentage: 0, totalHours: 0, attendedHours: 0, trend: 0 };
