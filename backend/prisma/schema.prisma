@@ -20,6 +20,7 @@ model Student {
   phone         String?
   guardianName  String?
   guardianPhone String?
+  parentEmail   String?
   photo         String?
   verified           Boolean      @default(false)
   verificationToken  String?      @unique

@@ -53,7 +53,7 @@ const LecturerRecordManager = ({ user, students, branches, onAddStudent, onUpdat
   const [currentStudent, setCurrentStudent] = useState({
     name: '', rollNo: '', email: '', phone: '',
     branch: user?.branch || 'CSE', year: 1,
-    dob: '', guardianName: '', guardianPhone: ''
+    dob: '', guardianName: '', guardianPhone: '', parentEmail: ''
   });
   const [branchInput, setBranchInput] = useState('');
   const [filterBranch, setFilterBranch] = useState(user?.branch || 'all');
@@ -77,7 +77,7 @@ const LecturerRecordManager = ({ user, students, branches, onAddStudent, onUpdat
 
   const handleAdd = () => {
     setEditMode(false);
-    setCurrentStudent({ name: '', rollNo: '', email: '', phone: '', branch: branches[0] || 'CSE', year: 1, dob: '', guardianName: '', guardianPhone: '' });
+    setCurrentStudent({ name: '', rollNo: '', email: '', phone: '', branch: branches[0] || 'CSE', year: 1, dob: '', guardianName: '', guardianPhone: '', parentEmail: '' });
     setShowModal(true);
   };
 
@@ -450,6 +450,7 @@ const LecturerRecordManager = ({ user, students, branches, onAddStudent, onUpdat
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <InputField label="Guardian Name" icon={User} type="text" value={currentStudent.guardianName || ''} onChange={(e) => setCurrentStudent({ ...currentStudent, guardianName: e.target.value })} placeholder="Parent / Guardian" />
                 <InputField label="Guardian Phone" icon={Phone} type="tel" value={currentStudent.guardianPhone || ''} onChange={(e) => setCurrentStudent({ ...currentStudent, guardianPhone: e.target.value })} placeholder="9988776655" />
+                <InputField label="Parent Email" icon={Mail} type="email" value={currentStudent.parentEmail || ''} onChange={(e) => setCurrentStudent({ ...currentStudent, parentEmail: e.target.value })} placeholder="parent@example.com" />
               </div>
 
               {!editMode && (

@@ -46,6 +46,10 @@ router.post('/send-attendance', authMiddleware, async (req, res) => {
       try {
         await sendAttendanceReportToStudent(student, records, period);
         sent++;
+        if (student.parentEmail) {
+          await new Promise(r => setTimeout(r, 200));
+          await sendAttendanceReportToParent(student, records, period);
+        }
         // Small delay to avoid Gmail rate limit
         await new Promise(r => setTimeout(r, 300));
       } catch (err) {
