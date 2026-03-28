@@ -12,7 +12,21 @@ const notificationsRoutes = require('./src/routes/notifications');
 
 const app = express();
 
-app.use(cors({ origin: process.env.FRONTEND_URL || 'http://localhost:5173', credentials: true }));
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:4173',
+  /\.vercel\.app$/,
+];
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    const allowed = allowedOrigins.some(o =>
+      typeof o === 'string' ? o === origin : o.test(origin)
+    );
+    callback(allowed ? null : new Error('CORS not allowed'), allowed);
+  },
+  credentials: true
+}));
 app.use(express.json({ limit: '10mb' }));
 
 app.use('/api/auth', authRoutes);
