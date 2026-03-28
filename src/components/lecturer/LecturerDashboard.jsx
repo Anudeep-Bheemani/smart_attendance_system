@@ -6,13 +6,15 @@ import { api } from '../../api';
 import RiskBadge from '../common/RiskBadge';
 import { downloadExcel, downloadPDF } from '../../utils/downloadReport';
 
-// Jul-Dec = Sem 1 | Jan-Jun = Sem 2
-const SEM_MONTHS = {
+const DEFAULT_SEM_MONTHS = {
   1: ['July','August','September','October','November','December'],
   2: ['January','February','March','April','May','June']
 };
 
-const LecturerDashboard = ({ user, students, attendanceData }) => {
+const getSemMonths = (semConfig, year, sem) =>
+  semConfig?.[String(year)]?.[String(sem)] || DEFAULT_SEM_MONTHS[sem] || [];
+
+const LecturerDashboard = ({ user, students, attendanceData, semConfig }) => {
   const [aiReport, setAiReport] = useState(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
@@ -46,14 +48,14 @@ const LecturerDashboard = ({ user, students, attendanceData }) => {
   const [selectedMonth, setSelectedMonth] = useState('all');
 
   const allBranches = [...new Set(students.map(s => s.branch))].filter(Boolean).sort();
-  const semMonths = SEM_MONTHS[parseInt(selectedSemester)];
+  const semMonths = getSemMonths(semConfig, selectedYear, parseInt(selectedSemester));
 
   const currentClass = `${selectedBranch} — Year ${selectedYear}`;
 
   // Records for selected class + semester
   const classRecords = attendanceData.filter(r => {
     const student = students.find(st => st.id === r.studentId);
-    const semMatch = selectedSemester === 'all' || r.semester === parseInt(selectedSemester);
+    const semMatch = r.semester === parseInt(selectedSemester);
     const monthMatch = selectedMonth === 'all' || r.month === selectedMonth;
     return student?.branch === selectedBranch && student?.year === parseInt(selectedYear) && semMatch && monthMatch;
   });

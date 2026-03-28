@@ -6,7 +6,15 @@ import { calculatePercentage } from '../../utils';
 import { scheduleMonthEndReminders, sendMonthEndReminderToStaff, notifyAttendanceSaved } from '../../services/notificationService';
 import { downloadExcel, downloadPDF } from '../../utils/downloadReport';
 
-const AdminDashboard = ({ students, attendanceData, staffList }) => {
+const DEFAULT_SEM_MONTHS = {
+  1: ['July','August','September','October','November','December'],
+  2: ['January','February','March','April','May','June']
+};
+
+const getSemMonths = (semConfig, year, sem) =>
+  semConfig?.[String(year)]?.[String(sem)] || DEFAULT_SEM_MONTHS[sem] || [];
+
+const AdminDashboard = ({ students, attendanceData, staffList, semConfig }) => {
   const [selectedYear, setSelectedYear] = useState('all');
   const [selectedBranch, setSelectedBranch] = useState('all');
   const [selectedSemester, setSelectedSemester] = useState('all');
@@ -172,7 +180,14 @@ const AdminDashboard = ({ students, attendanceData, staffList }) => {
 
   const branches = ['CSE', 'ECE', 'MECH', 'CIVIL', 'EEE'];
   const years = ['1', '2', '3', '4'];
-  const months = [...new Set(attendanceData.map(r => r.month))].filter(Boolean);
+  // Show months for selected semester; if a specific year is selected use that year's config,
+  // otherwise union months from all years for that semester
+  const semesterMonths = selectedSemester === 'all'
+    ? [...new Set(attendanceData.map(r => r.month))].filter(Boolean)
+    : selectedYear !== 'all'
+      ? getSemMonths(semConfig, selectedYear, parseInt(selectedSemester))
+      : [...new Set(['1','2','3','4'].flatMap(y => getSemMonths(semConfig, y, parseInt(selectedSemester))))];
+  const months = semesterMonths;
 
   return (
     <div className="space-y-6">

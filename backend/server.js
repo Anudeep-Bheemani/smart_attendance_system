@@ -9,6 +9,7 @@ const branchesRoutes = require('./src/routes/branches');
 const subjectsRoutes = require('./src/routes/subjects');
 const attendanceRoutes = require('./src/routes/attendance');
 const notificationsRoutes = require('./src/routes/notifications');
+const semConfigRoutes = require('./src/routes/semConfig');
 
 const app = express();
 
@@ -22,6 +23,7 @@ app.use('/api/branches', branchesRoutes);
 app.use('/api/subjects', subjectsRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/notifications', notificationsRoutes);
+app.use('/api/sem-config', semConfigRoutes);
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 

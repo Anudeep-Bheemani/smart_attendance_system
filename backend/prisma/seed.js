@@ -168,6 +168,7 @@ async function main() {
   await prisma.admin.deleteMany();
   await prisma.branch.deleteMany();
   await prisma.subjectConfig.deleteMany();
+  await prisma.semConfig.deleteMany();
 
   for (const name of INITIAL_BRANCHES) {
     await prisma.branch.create({ data: { name } });
@@ -176,6 +177,15 @@ async function main() {
 
   await prisma.subjectConfig.create({ data: { data: SUBJECTS } });
   console.log('Seeded subjects config');
+
+  const DEFAULT_SEM_CONFIG = {
+    "1": { "1": ["July","August","September","October","November","December"], "2": ["January","February","March","April","May","June"] },
+    "2": { "1": ["July","August","September","October","November","December"], "2": ["January","February","March","April","May","June"] },
+    "3": { "1": ["July","August","September","October","November","December"], "2": ["January","February","March","April","May","June"] },
+    "4": { "1": ["July","August","September","October","November","December"], "2": ["January","February","March","April","May","June"] }
+  };
+  await prisma.semConfig.create({ data: { data: DEFAULT_SEM_CONFIG } });
+  console.log('Seeded semester configuration');
 
   for (const admin of INITIAL_ADMIN) {
     const hashed = await bcrypt.hash(admin.password, 10);

@@ -7,38 +7,39 @@ import OverallPredictionPanel from './OverallPredictionPanel';
 import AttendanceCalculator from './AttendanceCalculator';
 import { downloadPDF } from '../../utils/downloadReport';
 
-// Jul-Dec = Sem 1 | Jan-Jun = Sem 2
-const SEM_MONTHS = {
+const DEFAULT_SEM_MONTHS = {
   1: ["July", "August", "September", "October", "November", "December"],
   2: ["January", "February", "March", "April", "May", "June"]
 };
 
-const getDefaultSem = () => {
-  const m = new Date().getMonth() + 1;
-  return m >= 7 ? '1' : '2';
+const getSemMonths = (semConfig, year, sem) =>
+  semConfig?.[String(year)]?.[String(sem)] || DEFAULT_SEM_MONTHS[sem] || [];
+
+const getDefaultSem = (semConfig, year) => {
+  const currentMonth = new Date().toLocaleString('default', { month: 'long' });
+  const sem1Months = getSemMonths(semConfig, year, 1);
+  return sem1Months.includes(currentMonth) ? '1' : '2';
 };
 
-const StudentDashboard = ({ student, attendanceData, onUpdateProfile, isReadOnly }) => {
+const StudentDashboard = ({ student, attendanceData, onUpdateProfile, isReadOnly, semConfig }) => {
   const [showAiModal, setShowAiModal] = useState(false);
   const [aiMode, setAiMode] = useState('menu');
   const [isGenerating, setIsGenerating] = useState(false);
   const [aiResult, setAiResult] = useState('');
   const [letterReason, setLetterReason] = useState('');
-  const [selectedSem, setSelectedSem] = useState(getDefaultSem);
+  const [selectedSem, setSelectedSem] = useState(() => getDefaultSem(semConfig, student?.year));
   const [selectedMonth, setSelectedMonth] = useState('all');
 
   const myRaw = attendanceData.filter(r => r.studentId === student.id);
 
-  // Months available for the chosen semester (or all months if "all")
-  const semMonthOrder = selectedSem === 'all'
-    ? [...SEM_MONTHS[1], ...SEM_MONTHS[2]]
-    : SEM_MONTHS[parseInt(selectedSem)];
+  // Months available for the chosen semester
+  const semMonthOrder = getSemMonths(semConfig, student?.year, parseInt(selectedSem));
   const availableMonths = semMonthOrder.filter(m =>
-    myRaw.some(r => r.month === m && (selectedSem === 'all' || r.semester === parseInt(selectedSem)))
+    myRaw.some(r => r.month === m && r.semester === parseInt(selectedSem))
   );
 
   const myAttendance = myRaw.filter(r => {
-    const semMatch = selectedSem === 'all' || r.semester === parseInt(selectedSem);
+    const semMatch = r.semester === parseInt(selectedSem);
     const monthMatch = selectedMonth === 'all' || r.month === selectedMonth;
     return semMatch && monthMatch;
   });
@@ -129,7 +130,7 @@ const StudentDashboard = ({ student, attendanceData, onUpdateProfile, isReadOnly
             </div>
             {/* Semester pills */}
             <div className="flex gap-2">
-              {[['all','All Sems'], ['1','Sem 1'], ['2','Sem 2']].map(([val, label]) => (
+              {[['1','Sem 1'], ['2','Sem 2']].map(([val, label]) => (
                 <button
                   key={val}
                   onClick={() => handleSemChange(val)}

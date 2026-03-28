@@ -4,19 +4,25 @@ import { calculatePercentage } from '../../utils';
 import RiskBadge from '../common/RiskBadge';
 import { downloadExcel, downloadPDF } from '../../utils/downloadReport';
 
-// Jul-Dec = Sem 1 | Jan-Jun = Sem 2
-const SEM_MONTHS = {
+const DEFAULT_SEM_MONTHS = {
   1: ['July','August','September','October','November','December'],
   2: ['January','February','March','April','May','June']
 };
 
-export const ClassAttendanceView = ({ currentUser, allStudents, attendanceData }) => {
+const getSemMonths = (semConfig, year, sem) =>
+  semConfig?.[String(year)]?.[String(sem)] || DEFAULT_SEM_MONTHS[sem] || [];
+
+export const ClassAttendanceView = ({ currentUser, allStudents, attendanceData, semConfig }) => {
   const [sortMode, setSortMode] = useState('roll');
   const [filterMode, setFilterMode] = useState('all');
-  const [selectedSem, setSelectedSem] = useState(() => new Date().getMonth() + 1 >= 7 ? '1' : '2');
+  const [selectedSem, setSelectedSem] = useState(() => {
+    const currentMonth = new Date().toLocaleString('default', { month: 'long' });
+    const sem1Months = getSemMonths(semConfig, currentUser?.year, 1);
+    return sem1Months.includes(currentMonth) ? '1' : '2';
+  });
   const [selectedMonth, setSelectedMonth] = useState('all');
 
-  const semMonths = selectedSem === 'all' ? [...SEM_MONTHS[1], ...SEM_MONTHS[2]] : SEM_MONTHS[parseInt(selectedSem)];
+  const semMonths = getSemMonths(semConfig, currentUser?.year, parseInt(selectedSem));
 
   const classmates = allStudents.filter(s =>
     s.branch === currentUser.branch &&
@@ -25,7 +31,7 @@ export const ClassAttendanceView = ({ currentUser, allStudents, attendanceData }
 
   const classmatesWithStats = classmates.map(student => {
     const records = attendanceData.filter(r => {
-      const semMatch = selectedSem === 'all' || r.semester === parseInt(selectedSem);
+      const semMatch = r.semester === parseInt(selectedSem);
       const monthMatch = selectedMonth === 'all' || r.month === selectedMonth;
       return r.studentId === student.id && semMatch && monthMatch;
     });

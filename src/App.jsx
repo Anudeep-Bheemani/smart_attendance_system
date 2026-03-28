@@ -13,6 +13,7 @@ import AttendanceEntry from './components/lecturer/AttendanceEntry';
 import LecturerRecordManager from './components/lecturer/LecturerRecordManager';
 import LecturerSettings from './components/lecturer/LecturerSettings';
 import SubjectManager from './components/common/SubjectManager';
+import SemConfigManager from './components/common/SemConfigManager';
 import { api } from './api';
 import { FileText, Settings, Sparkles, Loader2 } from 'lucide-react';
 
@@ -37,6 +38,14 @@ const MainApp = () => {
   const [subjects, setSubjects] = useState({});
   const [attendanceData, setAttendanceData] = useState([]);
 
+  const DEFAULT_SEM_CONFIG = {
+    "1": { "1": ["July","August","September","October","November","December"], "2": ["January","February","March","April","May","June"] },
+    "2": { "1": ["July","August","September","October","November","December"], "2": ["January","February","March","April","May","June"] },
+    "3": { "1": ["July","August","September","October","November","December"], "2": ["January","February","March","April","May","June"] },
+    "4": { "1": ["July","August","September","October","November","December"], "2": ["January","February","March","April","May","June"] }
+  };
+  const [semConfig, setSemConfig] = useState(DEFAULT_SEM_CONFIG);
+
   // Restore session on mount
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -57,22 +66,35 @@ const MainApp = () => {
 
   const loadAllData = async () => {
     try {
-      const [s, st, b, sub, att] = await Promise.all([
+      const [s, st, b, sub, att, sc] = await Promise.all([
         api.getStudents(),
         api.getStaff(),
         api.getBranches(),
         api.getSubjects(),
-        api.getAttendance()
+        api.getAttendance(),
+        api.getSemConfig()
       ]);
       setStudents(s);
       setStaffList(st);
       setBranches(b);
       setSubjects(sub);
       setAttendanceData(att);
+      setSemConfig(sc);
     } catch (err) {
       console.error('Failed to load data:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleUpdateSemConfig = async (newConfig) => {
+    try {
+      const updated = await api.updateSemConfig(newConfig);
+      setSemConfig(updated);
+      alert('Semester configuration saved successfully!');
+    } catch (err) {
+      alert(err.message || 'Failed to save semester configuration');
+      throw err;
     }
   };
 
@@ -327,6 +349,13 @@ const MainApp = () => {
               branches={branches}
             />
           );
+        if (activeView === 'sem-config')
+          return (
+            <SemConfigManager
+              semConfig={semConfig}
+              onUpdateSemConfig={handleUpdateSemConfig}
+            />
+          );
         if (activeView === 'reports') return (
           <div className="min-h-screen flex items-center justify-center p-8 bg-gradient-to-br from-slate-50 to-blue-50">
             <div className="text-center max-w-2xl">
@@ -363,7 +392,7 @@ const MainApp = () => {
             </div>
           </div>
         );
-        return <AdminDashboard students={students} attendanceData={attendanceData} staffList={staffList} />;
+        return <AdminDashboard students={students} attendanceData={attendanceData} staffList={staffList} semConfig={semConfig} />;
 
       case 'lecturer':
         if (activeView === 'entry')
@@ -376,6 +405,7 @@ const MainApp = () => {
               branches={branches}
               subjects={subjects}
               staffList={staffList}
+              semConfig={semConfig}
             />
           );
         if (activeView === 'manage-records')
@@ -399,6 +429,13 @@ const MainApp = () => {
               branches={branches}
             />
           );
+        if (activeView === 'sem-config')
+          return (
+            <SemConfigManager
+              semConfig={semConfig}
+              onUpdateSemConfig={handleUpdateSemConfig}
+            />
+          );
         if (activeView === 'settings')
           return (
             <LecturerSettings
@@ -413,12 +450,13 @@ const MainApp = () => {
             user={currentUser}
             students={students}
             attendanceData={attendanceData}
+            semConfig={semConfig}
           />
         );
 
       case 'student':
         if (activeView === 'classmates')
-          return <ClassAttendanceView currentUser={currentUser} allStudents={students} attendanceData={attendanceData} />;
+          return <ClassAttendanceView currentUser={currentUser} allStudents={students} attendanceData={attendanceData} semConfig={semConfig} />;
         if (activeView === 'profile')
           return <StudentProfile student={currentUser} />;
         return (
@@ -428,6 +466,7 @@ const MainApp = () => {
             attendanceData={attendanceData}
             onUpdateProfile={handleUpdateProfile}
             isReadOnly={false}
+            semConfig={semConfig}
           />
         );
 
@@ -439,6 +478,7 @@ const MainApp = () => {
             student={child}
             attendanceData={attendanceData}
             isReadOnly={true}
+            semConfig={semConfig}
           />
         );
       }

@@ -3,24 +3,28 @@ import { Calendar, BookOpen, Save, Loader2, Eye, X, Filter, Activity, AlertTrian
 import { calculatePercentage, predictHours } from '../../utils';
 import RiskBadge from '../common/RiskBadge';
 
-// June(6)-Dec(12) = Sem 1 | Jan(1)-May(5) = Sem 2
-const getAutoSemester = () => {
-  const month = new Date().getMonth() + 1;
-  return month >= 6 ? 1 : 2;
+const DEFAULT_SEM_MONTHS = {
+  1: ["July","August","September","October","November","December"],
+  2: ["January","February","March","April","May","June"]
 };
 
-const SEM_MONTHS = {
-  1: ["June", "July", "August", "September", "October", "November", "December"],
-  2: ["January", "February", "March", "April", "May"]
+const getSemMonths = (semConfig, year, sem) =>
+  semConfig?.[String(year)]?.[String(sem)] || DEFAULT_SEM_MONTHS[sem] || [];
+
+const getAutoSemester = (semConfig, year) => {
+  const currentMonth = new Date().toLocaleString('default', { month: 'long' });
+  const sem1Months = getSemMonths(semConfig, year, 1);
+  return sem1Months.includes(currentMonth) ? 1 : 2;
 };
 
-const AttendanceEntry = ({ user, students, attendanceData, updateAttendance, branches, subjects: subjectsFromProps }) => {
+const AttendanceEntry = ({ user, students, attendanceData, updateAttendance, branches, subjects: subjectsFromProps, semConfig }) => {
   const [selectedYear, setSelectedYear] = useState(user?.academicYear?.toString() || "1");
   const [selectedBranch, setSelectedBranch] = useState(user?.branch || "CSE");
-  const [selectedSemester, setSelectedSemester] = useState(getAutoSemester());
+  const [selectedSemester, setSelectedSemester] = useState(() => getAutoSemester(semConfig, user?.academicYear || "1"));
   const [selectedMonth, setSelectedMonth] = useState(() => {
-    const auto = getAutoSemester();
-    return SEM_MONTHS[auto][0];
+    const autoSem = getAutoSemester(semConfig, user?.academicYear || "1");
+    const months = getSemMonths(semConfig, user?.academicYear || "1", autoSem);
+    return months[0] || "July";
   });
   const [selectedAcademicYear, setSelectedAcademicYear] = useState(new Date().getFullYear().toString());
   const [search, setSearch] = useState("");
@@ -169,10 +173,11 @@ const AttendanceEntry = ({ user, students, attendanceData, updateAttendance, bra
               onChange={(e) => {
                 const m = e.target.value;
                 setSelectedMonth(m);
-                setSelectedSemester(SEM_MONTHS[1].includes(m) ? 1 : 2);
+                const sem1Months = getSemMonths(semConfig, selectedYear, 1);
+                setSelectedSemester(sem1Months.includes(m) ? 1 : 2);
               }}
             >
-              {[...SEM_MONTHS[1], ...SEM_MONTHS[2]].map(m => <option key={m} value={m}>{m}</option>)}
+              {[...getSemMonths(semConfig, selectedYear, 1), ...getSemMonths(semConfig, selectedYear, 2)].map(m => <option key={m} value={m}>{m}</option>)}
             </select>
           </div>
 

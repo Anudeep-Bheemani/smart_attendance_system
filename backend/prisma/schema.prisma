@@ -62,6 +62,12 @@ model SubjectConfig {
   updatedAt DateTime @updatedAt
 }
 
+model SemConfig {
+  id        Int      @id @default(autoincrement())
+  data      Json
+  updatedAt DateTime @updatedAt
+}
+
 model Attendance {
   id            String   @id @default(cuid())
   studentId     String
