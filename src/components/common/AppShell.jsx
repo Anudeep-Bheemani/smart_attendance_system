@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { LayoutDashboard, Users, FileText, Edit3, Settings, Activity, User, LogOut, GraduationCap, Menu, X, Layers, Moon, Sun, BookOpen, CalendarCog } from 'lucide-react';
+import { LayoutDashboard, Users, FileText, Edit3, Settings, Activity, User, LogOut, GraduationCap, Menu, X, Layers, Moon, Sun, BookOpen, CalendarDays } from 'lucide-react';
 
 const AppShell = ({ user, onLogout, children, activeView, setActiveView, darkMode, setDarkMode }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -11,7 +11,7 @@ const AppShell = ({ user, onLogout, children, activeView, setActiveView, darkMod
       { id: 'staff-management', label: 'Staff Management', icon: Users },
       { id: 'branch-management', label: 'Branch Management', icon: Layers },
       { id: 'subject-management', label: 'Subject Management', icon: BookOpen },
-      { id: 'sem-config', label: 'Sem Configuration', icon: CalendarCog },
+      { id: 'sem-config', label: 'Sem Configuration', icon: CalendarDays },
       { id: 'reports', label: 'Reports', icon: FileText },
       { id: 'settings', label: 'Settings', icon: Settings },
     ],
@@ -20,7 +20,7 @@ const AppShell = ({ user, onLogout, children, activeView, setActiveView, darkMod
       { id: 'entry', label: 'Attendance Entry', icon: Edit3 },
       { id: 'manage-records', label: 'Manage Records', icon: Settings },
       { id: 'subject-management', label: 'Subject Management', icon: BookOpen },
-      { id: 'sem-config', label: 'Sem Configuration', icon: CalendarCog },
+      { id: 'sem-config', label: 'Sem Configuration', icon: CalendarDays },
       { id: 'settings', label: 'Account Settings', icon: User },
     ],
     student: [
