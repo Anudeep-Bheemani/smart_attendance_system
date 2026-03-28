@@ -45,18 +45,45 @@ const LecturerDashboard = ({ user, students, attendanceData, semConfig }) => {
     );
     return String(latest.semester);
   });
-  const [selectedMonth, setSelectedMonth] = useState('all');
-
   const allBranches = [...new Set(students.map(s => s.branch))].filter(Boolean).sort();
   const semMonths = getSemMonths(semConfig, selectedYear, parseInt(selectedSemester));
 
+  // Range-of-months filter: fromMonth/toMonth default to full semester
+  const [fromMonth, setFromMonth] = useState(() => semMonths[0] || '');
+  const [toMonth, setToMonth] = useState(() => semMonths[semMonths.length - 1] || '');
+
+  // When semMonths changes (semester/year switch), reset range to full semester
+  const handleSemesterChange = (val) => {
+    setSelectedSemester(val);
+    const months = getSemMonths(semConfig, selectedYear, parseInt(val));
+    setFromMonth(months[0] || '');
+    setToMonth(months[months.length - 1] || '');
+  };
+  const handleYearChange = (val) => {
+    setSelectedYear(val);
+    const months = getSemMonths(semConfig, val, parseInt(selectedSemester));
+    setFromMonth(months[0] || '');
+    setToMonth(months[months.length - 1] || '');
+  };
+  const handleBranchChange = (val) => {
+    setSelectedBranch(val);
+  };
+
+  // Months included in the selected range
+  const fromIdx = semMonths.indexOf(fromMonth);
+  const toIdx = semMonths.indexOf(toMonth);
+  const activeMonths = semMonths.slice(
+    fromIdx >= 0 ? fromIdx : 0,
+    toIdx >= 0 ? toIdx + 1 : semMonths.length
+  );
+
   const currentClass = `${selectedBranch} — Year ${selectedYear}`;
 
-  // Records for selected class + semester
+  // Records for selected class + semester + month range
   const classRecords = attendanceData.filter(r => {
     const student = students.find(st => st.id === r.studentId);
     const semMatch = r.semester === parseInt(selectedSemester);
-    const monthMatch = selectedMonth === 'all' || r.month === selectedMonth;
+    const monthMatch = activeMonths.length === 0 || activeMonths.includes(r.month);
     return student?.branch === selectedBranch && student?.year === parseInt(selectedYear) && semMatch && monthMatch;
   });
 
@@ -169,21 +196,21 @@ const LecturerDashboard = ({ user, students, attendanceData, semConfig }) => {
           <div className="flex items-center gap-2 bg-slate-100 rounded-xl p-1">
             <select
               value={selectedBranch}
-              onChange={(e) => { setSelectedBranch(e.target.value); setSelectedMonth('all'); }}
+              onChange={(e) => handleBranchChange(e.target.value)}
               className="bg-white border border-slate-200 text-slate-700 text-sm font-semibold rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500"
             >
               {allBranches.map(b => <option key={b} value={b}>{b}</option>)}
             </select>
             <select
               value={selectedYear}
-              onChange={(e) => { setSelectedYear(e.target.value); setSelectedMonth('all'); }}
+              onChange={(e) => handleYearChange(e.target.value)}
               className="bg-white border border-slate-200 text-slate-700 text-sm font-semibold rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500"
             >
               {['1','2','3','4'].map(y => <option key={y} value={y}>Year {y}</option>)}
             </select>
             <select
               value={selectedSemester}
-              onChange={(e) => { setSelectedSemester(e.target.value); setSelectedMonth('all'); }}
+              onChange={(e) => handleSemesterChange(e.target.value)}
               className="bg-white border border-slate-200 text-slate-700 text-sm font-semibold rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="1">Sem 1</option>
@@ -381,13 +408,31 @@ const LecturerDashboard = ({ user, students, attendanceData, semConfig }) => {
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
-              {/* Month filter */}
+              {/* Month range filter */}
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-500">From</div>
               <select
-                value={selectedMonth}
-                onChange={(e) => setSelectedMonth(e.target.value)}
+                value={fromMonth}
+                onChange={(e) => {
+                  setFromMonth(e.target.value);
+                  const fi = semMonths.indexOf(e.target.value);
+                  const ti = semMonths.indexOf(toMonth);
+                  if (ti < fi) setToMonth(e.target.value);
+                }}
                 className="text-sm border border-slate-200 bg-white text-slate-700 font-medium rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="all">All Months</option>
+                {semMonths.map(m => <option key={m} value={m}>{m}</option>)}
+              </select>
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-500">To</div>
+              <select
+                value={toMonth}
+                onChange={(e) => {
+                  setToMonth(e.target.value);
+                  const fi = semMonths.indexOf(fromMonth);
+                  const ti = semMonths.indexOf(e.target.value);
+                  if (fi > ti) setFromMonth(e.target.value);
+                }}
+                className="text-sm border border-slate-200 bg-white text-slate-700 font-medium rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500"
+              >
                 {semMonths.map(m => <option key={m} value={m}>{m}</option>)}
               </select>
 
