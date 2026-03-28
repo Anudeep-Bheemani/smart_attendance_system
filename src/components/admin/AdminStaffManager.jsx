@@ -29,19 +29,21 @@ const AdminStaffManager = ({ staffList, onAddStaff, onUpdateStaff, onDeleteStaff
       return;
     }
 
-    const assignedClass = getAssignedClass(currentStaff.branch, currentStaff.academicYear);
+    const yearMap = { '1st Year': '1', '2nd Year': '2', '3rd Year': '3', '4th Year': '4' };
+    const numericYear = yearMap[currentStaff.academicYear] || currentStaff.academicYear;
+    const assignedClass = `${currentStaff.branch}-${numericYear}`;
 
     // Check if class already assigned (unless editing same staff)
     const existingStaff = staffList.find(s => {
-      const existingClass = getAssignedClass(s.branch || 'CSE', s.academicYear || '1st Year');
-      return existingClass === assignedClass && s.id !== currentStaff.id;
+      const sYear = yearMap[s.academicYear] || s.academicYear;
+      return `${s.branch}-${sYear}` === assignedClass && s.id !== currentStaff.id;
     });
-    
+
     if (existingStaff && !window.confirm(`${existingStaff.name} is already assigned to ${assignedClass}. Override?`)) {
       return;
     }
 
-    const staffData = { ...currentStaff, assignedClass };
+    const staffData = { ...currentStaff, assignedClass, academicYear: numericYear };
 
     try {
       if (isEditing) {
