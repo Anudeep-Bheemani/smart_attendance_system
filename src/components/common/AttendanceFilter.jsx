@@ -182,12 +182,6 @@ const AttendanceFilter = ({ semConfig, year, defaultSem, onChange }) => {
           </select>
         )}
 
-        {/* Auto-sem badge for single */}
-        {mode === 'single' && (
-          <span className="px-4 py-2.5 text-sm font-bold text-indigo-600 bg-indigo-50 border-2 border-indigo-200 rounded-xl">
-            Sem {autoSem} — auto detected
-          </span>
-        )}
 
         {/* Range step indicator */}
         {mode === 'range' && (
