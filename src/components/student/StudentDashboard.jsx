@@ -227,9 +227,12 @@ ${student.email}${student.phone ? `\n${student.phone}` : ''}`;
                       </div>
                    ) : (
                       <>
-                        <div className="bg-slate-50 p-4 rounded-lg border border-slate-100 text-sm whitespace-pre-wrap text-slate-700 leading-relaxed font-mono">
-                          {aiResult}
-                        </div>
+                        <textarea
+                          className="w-full bg-slate-50 p-4 rounded-lg border border-slate-200 text-sm text-slate-700 leading-relaxed font-mono resize-y focus:ring-2 focus:ring-indigo-400 outline-none"
+                          rows={14}
+                          value={aiResult}
+                          onChange={(e) => setAiResult(e.target.value)}
+                        />
                         <div className="flex gap-2">
                           <button
                             onClick={() => {
