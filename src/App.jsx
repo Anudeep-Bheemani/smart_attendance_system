@@ -473,6 +473,7 @@ const MainApp = () => {
             onUpdateProfile={handleUpdateProfile}
             isReadOnly={false}
             semConfig={semConfig}
+            staffList={staffList}
           />
         );
 
@@ -485,6 +486,7 @@ const MainApp = () => {
             attendanceData={attendanceData}
             isReadOnly={true}
             semConfig={semConfig}
+            staffList={staffList}
           />
         );
       }
