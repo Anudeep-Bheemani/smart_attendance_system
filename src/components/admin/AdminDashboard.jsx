@@ -127,19 +127,21 @@ const AdminDashboard = ({ students, attendanceData, staffList, semConfig, branch
   }, [attendanceData]);
 
   const branchData = useMemo(() => {
-    const names = branchList.length > 0 ? branchList : [...new Set(students.map(s => s.branch))];
-    return names
-      .map(name => {
-        const bs = studentStats.filter(s => s.branch === name);
-        return {
-          name,
-          safe: bs.filter(s => s.percentage >= 75).length,
-          warning: bs.filter(s => s.percentage >= 65 && s.percentage < 75).length,
-          critical: bs.filter(s => s.percentage < 65).length,
-          avg: bs.length > 0 ? (bs.reduce((a, s) => a + s.percentage, 0) / bs.length).toFixed(1) : '0.0',
-        };
-      })
-      .filter(b => b.safe + b.warning + b.critical > 0);
+    // Use all DB branches + any branches found on students (in case of mismatch)
+    const dbNames = branchList.length > 0 ? branchList : [];
+    const studentBranches = [...new Set(students.map(s => s.branch).filter(Boolean))];
+    const allNames = [...new Set([...dbNames, ...studentBranches])];
+    return allNames.map(name => {
+      const bs = studentStats.filter(s => s.branch === name);
+      return {
+        name,
+        safe: bs.filter(s => s.percentage >= 75).length,
+        warning: bs.filter(s => s.percentage >= 65 && s.percentage < 75).length,
+        critical: bs.filter(s => s.percentage < 65).length,
+        avg: bs.length > 0 ? (bs.reduce((a, s) => a + s.percentage, 0) / bs.length).toFixed(1) : '0.0',
+        total: bs.length,
+      };
+    });
   }, [branchList, students, studentStats]);
 
   const recentAlerts = [
@@ -367,7 +369,7 @@ const AdminDashboard = ({ students, attendanceData, staffList, semConfig, branch
             </thead>
             <tbody className="divide-y divide-slate-100">
               {branchData.map(branch => {
-                const total = branch.safe + branch.warning + branch.critical;
+                const total = branch.total;
                 const avgPercent = branch.avg;
                 return (
                   <tr key={branch.name} className="hover:bg-slate-50">
