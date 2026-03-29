@@ -146,7 +146,14 @@ const sendAttendanceReportToStudent = async (student, records, period) => {
           <p style="color: #78350f; font-size: 13px; margin: 6px 0 0;">Your attendance is below 75%. Please attend classes regularly to avoid academic penalties.</p>
         </div>` : ''}
 
-        <div style="border-top: 1px solid #e2e8f0; margin-top: 28px; padding-top: 20px;">
+        <div style="text-align: center; margin-top: 28px; margin-bottom: 8px;">
+          <a href="${process.env.APP_URL}" style="display: inline-block; background: linear-gradient(135deg, #1e40af, #3b82f6); color: white; text-decoration: none; padding: 12px 32px; border-radius: 10px; font-weight: 700; font-size: 14px; letter-spacing: 0.3px;">
+            📊 View Full Statistics →
+          </a>
+          <p style="color: #94a3b8; font-size: 12px; margin-top: 10px;">Login to SmartAttd for detailed subject-wise analytics and predictions.</p>
+        </div>
+
+        <div style="border-top: 1px solid #e2e8f0; margin-top: 20px; padding-top: 16px;">
           <p style="color: #94a3b8; font-size: 12px; margin: 0;">This is an automated message from SmartAttd. Please do not reply to this email.</p>
         </div>
       </div>
@@ -201,7 +208,14 @@ const sendAttendanceReportToParent = async (student, records, period) => {
           <p style="color: #065f46; font-size: 13px; margin: 0;">✅ Your ward's attendance is in good standing. Keep it up!</p>
         </div>`}
 
-        <div style="border-top: 1px solid #e2e8f0; padding-top: 20px;">
+        <div style="text-align: center; margin-top: 20px; margin-bottom: 8px;">
+          <a href="${process.env.APP_URL}" style="display: inline-block; background: linear-gradient(135deg, #1e40af, #3b82f6); color: white; text-decoration: none; padding: 12px 32px; border-radius: 10px; font-weight: 700; font-size: 14px; letter-spacing: 0.3px;">
+            📊 View Full Statistics →
+          </a>
+          <p style="color: #94a3b8; font-size: 12px; margin-top: 10px;">Login as <strong>Parent</strong> on SmartAttd using your ward's roll number for detailed attendance insights.</p>
+        </div>
+
+        <div style="border-top: 1px solid #e2e8f0; padding-top: 16px;">
           <p style="color: #94a3b8; font-size: 12px; margin: 0;">This is an automated message from SmartAttd. Please do not reply to this email.</p>
         </div>
       </div>
