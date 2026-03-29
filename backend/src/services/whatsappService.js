@@ -1,29 +1,43 @@
 const https = require('https');
 
-// ── CallMeBot sender ──────────────────────────────────────────────────────────
-// Each recipient must opt-in once: WhatsApp "+34 644 16 08 17" → "I allow callmebot to send me messages"
-// They receive a personal apiKey; we store it in DB and use it here.
+// ── Green API sender ──────────────────────────────────────────────────────────
+// Docs: https://green-api.com/en/docs/api/sending/SendMessage/
+// Set env vars on Render: GREEN_API_INSTANCE_ID, GREEN_API_TOKEN
 
-const sendCallMeBot = (phone, apiKey, message) => {
+const sendGreenAPI = (phone, message) => {
   return new Promise((resolve, reject) => {
-    const encoded = encodeURIComponent(message);
-    const url = `https://api.callmebot.com/whatsapp.php?phone=${phone}&text=${encoded}&apikey=${apiKey}`;
-    https.get(url, (res) => {
+    const instanceId = process.env.GREEN_API_INSTANCE_ID;
+    const token = process.env.GREEN_API_TOKEN;
+    if (!instanceId || !token) return reject(new Error('GREEN_API_INSTANCE_ID or GREEN_API_TOKEN not set'));
+
+    const chatId = `${phone}@c.us`;
+    const body = JSON.stringify({ chatId, message });
+
+    const options = {
+      hostname: 'api.green-api.com',
+      path: `/waInstance${instanceId}/sendMessage/${token}`,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) },
+    };
+
+    const req = https.request(options, (res) => {
       let data = '';
       res.on('data', chunk => { data += chunk; });
       res.on('end', () => {
-        // CallMeBot returns 200 even on some errors, check body
-        if (res.statusCode === 200) resolve(data);
-        else reject(new Error(`CallMeBot HTTP ${res.statusCode}: ${data}`));
+        if (res.statusCode === 200) resolve(JSON.parse(data));
+        else reject(new Error(`Green API HTTP ${res.statusCode}: ${data}`));
       });
-    }).on('error', reject);
+    });
+    req.on('error', reject);
+    req.write(body);
+    req.end();
   });
 };
 
 const normalizePhone = (phone) => {
   if (!phone) return null;
   const digits = phone.replace(/\D/g, '');
-  if (digits.length === 10) return '91' + digits;   // Indian 10-digit → add country code
+  if (digits.length === 10) return '91' + digits;
   return digits;
 };
 
@@ -35,8 +49,7 @@ const statusLabel = (pct) => {
 
 // ── Send attendance report to student ────────────────────────────────────────
 const sendAttendanceWhatsApp = async (student, records, period) => {
-  if (!student.callmebotKey || !student.phone) return { skipped: true };
-
+  if (!student.phone) return { skipped: true };
   const phone = normalizePhone(student.phone);
   if (!phone) return { skipped: true };
 
@@ -49,9 +62,7 @@ const sendAttendanceWhatsApp = async (student, records, period) => {
     return `  • ${r.subject}: ${r.attendedHours}/${r.totalHours} hrs (${p}%)`;
   }).join('\n');
 
-  const warning = pct < 75
-    ? '\n⚠️ Below 75%! Attend classes regularly to avoid penalties.'
-    : '';
+  const warning = pct < 75 ? '\n⚠️ Below 75%! Attend regularly to avoid penalties.' : '';
 
   const message =
 `📊 *SmartAttd Attendance Report*
@@ -65,14 +76,13 @@ ${subjectLines ? '\nSubject-wise:\n' + subjectLines : ''}${warning}
 
 View full stats: ${process.env.APP_URL}`;
 
-  await sendCallMeBot(phone, student.callmebotKey, message);
+  await sendGreenAPI(phone, message);
   return { sent: true };
 };
 
 // ── Send attendance report to parent ─────────────────────────────────────────
 const sendAttendanceWhatsAppToParent = async (student, records, period) => {
-  if (!student.parentCallmebotKey || !student.guardianPhone) return { skipped: true };
-
+  if (!student.guardianPhone) return { skipped: true };
   const phone = normalizePhone(student.guardianPhone);
   if (!phone) return { skipped: true };
 
@@ -99,7 +109,7 @@ Attended: ${attendedHours}/${totalHours} hrs${warning}
 View full stats: ${process.env.APP_URL}
 (Login as Parent using ward's roll number)`;
 
-  await sendCallMeBot(phone, student.parentCallmebotKey, message);
+  await sendGreenAPI(phone, message);
   return { sent: true };
 };
 
