@@ -145,9 +145,9 @@ ${student.email}${student.phone ? `\n${student.phone}` : ''}`;
 
         {isReadOnly ? (
           /* Parent view — Contact card */
-          <div className="bg-gradient-to-br from-teal-500 to-cyan-600 rounded-xl p-6 text-white shadow-lg shadow-teal-500/20 relative overflow-hidden">
+          <div className="bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl p-6 text-white shadow-lg shadow-purple-500/20 relative overflow-hidden">
             <div className="relative z-10 h-full flex flex-col gap-3">
-              <h3 className="text-teal-100 font-medium flex items-center gap-2">
+              <h3 className="text-purple-100 font-medium flex items-center gap-2">
                 <Send size={16} /> Quick Contact
               </h3>
               {/* Class In-charge */}
@@ -157,7 +157,7 @@ ${student.email}${student.phone ? `\n${student.phone}` : ''}`;
                 const waPhone = inchargePhone?.length === 10 ? '91' + inchargePhone : inchargePhone;
                 return incharge ? (
                   <div className="bg-white/10 rounded-lg p-3">
-                    <p className="text-xs text-teal-100 font-semibold uppercase tracking-wide mb-2">Class In-charge · {incharge.name}</p>
+                    <p className="text-xs text-purple-100 font-semibold uppercase tracking-wide mb-2">Class In-charge · {incharge.name}</p>
                     <div className="flex gap-2">
                       <a href={`mailto:${incharge.email}`} className="flex-1 flex items-center justify-center gap-1.5 bg-white/20 hover:bg-white/30 text-white text-xs font-bold py-1.5 rounded-lg transition-colors">
                         <Send size={12} /> Email
@@ -175,7 +175,7 @@ ${student.email}${student.phone ? `\n${student.phone}` : ''}`;
               {/* Admin/Principal */}
               {adminContact && (
                 <div className="bg-white/10 rounded-lg p-3">
-                  <p className="text-xs text-teal-100 font-semibold uppercase tracking-wide mb-2">Principal / Admin · {adminContact.name}</p>
+                  <p className="text-xs text-purple-100 font-semibold uppercase tracking-wide mb-2">Principal / Admin · {adminContact.name}</p>
                   <div className="flex gap-2">
                     <a href={`mailto:${adminContact.email}`} className="flex-1 flex items-center justify-center gap-1.5 bg-white/20 hover:bg-white/30 text-white text-xs font-bold py-1.5 rounded-lg transition-colors">
                       <Send size={12} /> Email

@@ -27,7 +27,9 @@ router.post('/login', async (req, res) => {
           ...safeStudent,
           id: `P-${student.id}`,
           role: 'parent',
-          name: `Parent of ${student.name}`,
+          name: student.guardianName || `Parent of ${student.name}`,
+          phone: student.guardianPhone || null,
+          email: student.parentEmail || student.email,
           childId: student.id
         };
       } else {
@@ -73,7 +75,9 @@ router.get('/me', authMiddleware, async (req, res) => {
         ...safe,
         id,
         role: 'parent',
-        name: `Parent of ${student.name}`,
+        name: student.guardianName || `Parent of ${student.name}`,
+        phone: student.guardianPhone || null,
+        email: student.parentEmail || student.email,
         childId: student.id
       });
     }
