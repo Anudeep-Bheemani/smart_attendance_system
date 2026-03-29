@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Activity, CheckCircle, AlertTriangle, Sparkles, MessageSquare, X, Loader2, Download, Copy, Check, Send } from 'lucide-react';
+import { Activity, CheckCircle, AlertTriangle, Sparkles, MessageSquare, X, Loader2, Download, Copy, Check, Send, Bell, BellOff } from 'lucide-react';
 import { calculatePercentage } from '../../utils';
 import { callGemini } from '../../services/gemini';
 import { api } from '../../api';
@@ -18,6 +18,14 @@ const StudentDashboard = ({ student, attendanceData, onUpdateProfile, isReadOnly
   const [copied, setCopied] = useState(false);
   const [letterRecipient, setLetterRecipient] = useState('incharge');
   const [isSendingLetter, setIsSendingLetter] = useState(false);
+
+  // WhatsApp alerts setup
+  const [waKey, setWaKey] = useState(student?.callmebotKey || '');
+  const [waParentKey, setWaParentKey] = useState(student?.parentCallmebotKey || '');
+  const [savingWa, setSavingWa] = useState(false);
+  const [savingWaParent, setSavingWaParent] = useState(false);
+  const [waSaved, setWaSaved] = useState(false);
+  const [waParentSaved, setWaParentSaved] = useState(false);
 
   const initSem = getDefaultSem(semConfig, student?.year);
   const [attFilter, setAttFilter] = useState({ semester: parseInt(initSem), activeMonths: [] });
@@ -362,6 +370,116 @@ ${student.email}${student.phone ? `\n${student.phone}` : ''}`;
           </div>
         </div>
       )}
+
+      {/* WhatsApp Alerts Setup */}
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="flex items-center gap-3 px-6 py-4 border-b border-slate-100 bg-green-50">
+          <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center flex-shrink-0">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+          </div>
+          <div>
+            <h3 className="font-bold text-slate-800 text-sm">WhatsApp Attendance Alerts</h3>
+            <p className="text-xs text-slate-500">Get your attendance report on WhatsApp whenever the admin sends reports</p>
+          </div>
+          {(student?.callmebotKey || (!isReadOnly && waKey)) && (
+            <span className="ml-auto flex items-center gap-1 text-xs font-bold text-green-600 bg-green-100 px-2 py-1 rounded-full">
+              <Bell size={11} /> Active
+            </span>
+          )}
+        </div>
+
+        <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Student WhatsApp — always shown for student, hidden for parent */}
+          {!isReadOnly && (
+            <div className="space-y-3">
+              <p className="text-sm font-semibold text-slate-700">Your WhatsApp Alerts</p>
+              <ol className="text-xs text-slate-500 space-y-1 list-decimal list-inside bg-slate-50 rounded-lg p-3">
+                <li>Save this number: <span className="font-bold text-slate-700">+34 644 16 08 17</span></li>
+                <li>Send exactly: <span className="font-mono bg-white px-1 rounded border text-slate-700">I allow callmebot to send me messages</span></li>
+                <li>You'll receive your personal API key — paste it below</li>
+              </ol>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none font-mono"
+                  placeholder="Paste API key here..."
+                  value={waKey}
+                  onChange={e => setWaKey(e.target.value)}
+                />
+                <button
+                  disabled={savingWa || !waKey.trim()}
+                  onClick={async () => {
+                    setSavingWa(true);
+                    try {
+                      await api.saveCallmebotKey(student.id, waKey.trim());
+                      setWaSaved(true);
+                      setTimeout(() => setWaSaved(false), 3000);
+                    } catch (err) {
+                      alert('Failed to save: ' + err.message);
+                    } finally {
+                      setSavingWa(false);
+                    }
+                  }}
+                  className="px-4 py-2 bg-green-500 hover:bg-green-600 disabled:opacity-50 text-white rounded-lg text-sm font-semibold transition-colors flex items-center gap-1.5"
+                >
+                  {savingWa ? <Loader2 size={14} className="animate-spin" /> : waSaved ? <Check size={14} /> : <Bell size={14} />}
+                  {waSaved ? 'Saved!' : 'Save'}
+                </button>
+              </div>
+              {student?.callmebotKey && (
+                <p className="text-xs text-green-600 font-medium flex items-center gap-1">
+                  <Check size={12} /> WhatsApp alerts are active for your number ({student.phone || 'phone on file'})
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Parent WhatsApp — shown for parent login, or as secondary panel for student */}
+          <div className="space-y-3">
+            <p className="text-sm font-semibold text-slate-700">
+              {isReadOnly ? 'Your WhatsApp Alerts (Parent)' : "Parent's WhatsApp Alerts"}
+            </p>
+            <ol className="text-xs text-slate-500 space-y-1 list-decimal list-inside bg-slate-50 rounded-lg p-3">
+              <li>{isReadOnly ? 'Save this number on your phone:' : "Parent saves this number:"} <span className="font-bold text-slate-700">+34 644 16 08 17</span></li>
+              <li>Send: <span className="font-mono bg-white px-1 rounded border text-slate-700">I allow callmebot to send me messages</span></li>
+              <li>{isReadOnly ? 'Paste your API key below' : 'Share the API key with you to paste below'}</li>
+            </ol>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none font-mono"
+                placeholder="Parent's API key..."
+                value={waParentKey}
+                onChange={e => setWaParentKey(e.target.value)}
+              />
+              <button
+                disabled={savingWaParent || !waParentKey.trim()}
+                onClick={async () => {
+                  setSavingWaParent(true);
+                  try {
+                    await api.saveParentCallmebotKey(student.id, waParentKey.trim());
+                    setWaParentSaved(true);
+                    setTimeout(() => setWaParentSaved(false), 3000);
+                  } catch (err) {
+                    alert('Failed to save: ' + err.message);
+                  } finally {
+                    setSavingWaParent(false);
+                  }
+                }}
+                className="px-4 py-2 bg-green-500 hover:bg-green-600 disabled:opacity-50 text-white rounded-lg text-sm font-semibold transition-colors flex items-center gap-1.5"
+              >
+                {savingWaParent ? <Loader2 size={14} className="animate-spin" /> : waParentSaved ? <Check size={14} /> : <Bell size={14} />}
+                {waParentSaved ? 'Saved!' : 'Save'}
+              </button>
+            </div>
+            {student?.parentCallmebotKey && (
+              <p className="text-xs text-green-600 font-medium flex items-center gap-1">
+                <Check size={12} /> WhatsApp alerts active for parent ({student.guardianPhone || 'guardian phone on file'})
+              </p>
+            )}
+          </div>
+        </div>
+      </div>
 
       <OverallPredictionPanel totalAttended={totalAttended} totalConducted={totalConducted} />
       <AttendanceCalculator currentAttended={totalAttended} currentTotal={totalConducted} />

@@ -67,6 +67,17 @@ const sendVerificationEmail = async (student) => {
           <p style="color: #cbd5e1; font-size: 11px; margin-top: 6px; word-break: break-all;">${verifyUrl}</p>
         </div>
 
+        <!-- WhatsApp Alerts Setup -->
+        <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+          <p style="color: #166534; font-size: 13px; font-weight: 700; margin: 0 0 10px;">📱 Enable WhatsApp Attendance Alerts (Free)</p>
+          <p style="color: #166534; font-size: 12px; margin: 0 0 10px;">Get your attendance reports directly on WhatsApp in 3 steps:</p>
+          <ol style="color: #15803d; font-size: 12px; margin: 0; padding-left: 18px; line-height: 2;">
+            <li>Save this number on your phone: <strong>+34 644 16 08 17</strong></li>
+            <li>Send this exact message to it on WhatsApp: <strong>I allow callmebot to send me messages</strong></li>
+            <li>You'll receive a personal API key — log in to SmartAttd and enter it in your dashboard under <strong>WhatsApp Alerts</strong></li>
+          </ol>
+        </div>
+
         <div style="border-top: 1px solid #e2e8f0; padding-top: 20px;">
           <p style="color: #94a3b8; font-size: 12px; margin: 0;">If you didn't expect this email, please ignore it or contact your lecturer.</p>
         </div>

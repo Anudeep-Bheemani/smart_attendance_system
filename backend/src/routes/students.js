@@ -83,7 +83,7 @@ router.post('/', authMiddleware, async (req, res) => {
 // PUT /api/students/:id
 router.put('/:id', authMiddleware, async (req, res) => {
   try {
-    const { name, rollNo, email, phone, branch, year, dob, guardianName, guardianPhone, parentEmail, photo } = req.body;
+    const { name, rollNo, email, phone, branch, year, dob, guardianName, guardianPhone, parentEmail, photo, callmebotKey, parentCallmebotKey } = req.body;
     const data = {};
     if (name !== undefined) data.name = name;
     if (rollNo !== undefined) data.rollNo = rollNo;
@@ -96,6 +96,8 @@ router.put('/:id', authMiddleware, async (req, res) => {
     if (guardianPhone !== undefined) data.guardianPhone = guardianPhone;
     if (parentEmail !== undefined) data.parentEmail = parentEmail || null;
     if (photo !== undefined) data.photo = photo;
+    if (callmebotKey !== undefined) data.callmebotKey = callmebotKey || null;
+    if (parentCallmebotKey !== undefined) data.parentCallmebotKey = parentCallmebotKey || null;
 
     const student = await prisma.student.update({ where: { id: req.params.id }, data });
     res.json(omitPassword(student));

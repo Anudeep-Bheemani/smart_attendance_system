@@ -7,6 +7,7 @@ const {
   sendStaffReminderEmail,
   sendExcuseLetterEmail,
 } = require('../services/emailService');
+const { sendAttendanceWhatsApp, sendAttendanceWhatsAppToParent } = require('../services/whatsappService');
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -81,6 +82,71 @@ router.post('/send-attendance', authMiddleware, async (req, res) => {
   } catch (err) {
     console.error('Send attendance error:', err);
     res.status(500).json({ error: 'Failed to send emails', details: err.message });
+  }
+});
+
+// POST /api/notifications/send-whatsapp
+// Body: { branch, year, semester, month } — same as send-attendance but WhatsApp only
+router.post('/send-whatsapp', authMiddleware, async (req, res) => {
+  try {
+    const { branch, year, semester, month } = req.body;
+
+    const studentWhere = {};
+    if (branch && branch !== 'all') studentWhere.branch = branch;
+    if (year && year !== 'all') studentWhere.year = parseInt(year);
+
+    const students = await prisma.student.findMany({ where: studentWhere });
+    const eligible = students.filter(s => (s.callmebotKey && s.phone) || (s.parentCallmebotKey && s.guardianPhone));
+
+    if (eligible.length === 0) {
+      return res.json({ success: true, sent: 0, message: 'No students/parents have WhatsApp alerts enabled yet.' });
+    }
+
+    const attFilter = { studentId: { in: students.map(s => s.id) } };
+    const semNum = parseInt(semester);
+    if (semester && semester !== 'all' && semester !== 'null' && !isNaN(semNum)) attFilter.semester = semNum;
+    if (month && month !== 'all') attFilter.month = month;
+
+    const allRecords = await prisma.attendance.findMany({ where: attFilter });
+
+    let period = '';
+    if (month && month !== 'all') {
+      period = (semester && semester !== 'all' && semester !== 'null') ? `${month} · Sem ${semester}` : month;
+    } else {
+      period = (semester && semester !== 'all' && semester !== 'null') ? `Semester ${semester}` : 'Full Year';
+    }
+
+    let sent = 0;
+    const errors = [];
+
+    for (const student of eligible) {
+      const records = allRecords.filter(r => r.studentId === student.id);
+      try {
+        if (student.callmebotKey && student.phone) {
+          await sendAttendanceWhatsApp(student, records, period);
+          sent++;
+          await new Promise(r => setTimeout(r, 400));
+        }
+        if (student.parentCallmebotKey && student.guardianPhone) {
+          await sendAttendanceWhatsAppToParent(student, records, period);
+          sent++;
+          await new Promise(r => setTimeout(r, 400));
+        }
+      } catch (err) {
+        errors.push({ student: student.name, error: err.message });
+      }
+    }
+
+    res.json({
+      success: true,
+      sent,
+      total: eligible.length,
+      errors: errors.length > 0 ? errors : undefined,
+      message: `Sent ${sent} WhatsApp message(s) to ${eligible.length} eligible student(s)/parent(s).`,
+    });
+  } catch (err) {
+    console.error('Send WhatsApp error:', err);
+    res.status(500).json({ error: 'Failed to send WhatsApp messages', details: err.message });
   }
 });
 

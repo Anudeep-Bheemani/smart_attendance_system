@@ -65,6 +65,12 @@ export const api = {
   changeStaffPassword: (currentPassword, newPassword) =>
     fetch(`${API_URL}/staff/change-password`, { method: 'POST', headers: headers(), body: JSON.stringify({ currentPassword, newPassword }) }).then(handleResponse),
 
+  saveCallmebotKey: (id, callmebotKey) =>
+    fetch(`${API_URL}/students/${id}`, { method: 'PUT', headers: headers(), body: JSON.stringify({ callmebotKey }) }).then(handleResponse),
+
+  saveParentCallmebotKey: (id, parentCallmebotKey) =>
+    fetch(`${API_URL}/students/${id}`, { method: 'PUT', headers: headers(), body: JSON.stringify({ parentCallmebotKey }) }).then(handleResponse),
+
   // Branches
   getBranches: () =>
     fetch(`${API_URL}/branches`, { headers: headers() }).then(handleResponse),
@@ -99,6 +105,9 @@ export const api = {
   // Notifications
   sendAttendanceEmails: ({ branch, year, semester, month }) =>
     fetch(`${API_URL}/notifications/send-attendance`, { method: 'POST', headers: headers(), body: JSON.stringify({ branch, year, semester, month }) }).then(handleResponse),
+
+  sendWhatsAppReports: ({ branch, year, semester, month }) =>
+    fetch(`${API_URL}/notifications/send-whatsapp`, { method: 'POST', headers: headers(), body: JSON.stringify({ branch, year, semester, month }) }).then(handleResponse),
 
   sendStaffEmails: () =>
     fetch(`${API_URL}/notifications/send-staff-reminder`, { method: 'POST', headers: headers() }).then(handleResponse),

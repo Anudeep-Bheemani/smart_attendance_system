@@ -21,7 +21,9 @@ model Student {
   guardianName  String?
   guardianPhone String?
   parentEmail   String?
-  photo         String?
+  photo              String?
+  callmebotKey       String?
+  parentCallmebotKey String?
   verified           Boolean      @default(false)
   verificationToken  String?      @unique
   createdAt          DateTime     @default(now())
