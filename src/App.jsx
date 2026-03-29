@@ -41,6 +41,7 @@ const MainApp = () => {
   const [branches, setBranches] = useState([]);
   const [subjects, setSubjects] = useState({});
   const [attendanceData, setAttendanceData] = useState([]);
+  const [adminContact, setAdminContact] = useState(null);
 
   const DEFAULT_SEM_CONFIG = {
     "1": { "1": ["July","August","September","October","November","December"], "2": ["January","February","March","April","May","June"] },
@@ -70,17 +71,19 @@ const MainApp = () => {
 
   const loadAllData = async () => {
     try {
-      const [s, st, b, sub, att, sc] = await Promise.all([
+      const [s, st, b, sub, att, sc, ac] = await Promise.all([
         api.getStudents(),
         api.getStaff(),
         api.getBranches(),
         api.getSubjects(),
         api.getAttendance(),
-        api.getSemConfig()
+        api.getSemConfig(),
+        api.getAdminContact().catch(() => null)
       ]);
       setStudents(s);
       setStaffList(st);
       setBranches(b);
+      setAdminContact(ac);
       setSubjects(sub);
       setAttendanceData(att);
       setSemConfig(sc);
@@ -474,6 +477,7 @@ const MainApp = () => {
             isReadOnly={false}
             semConfig={semConfig}
             staffList={staffList}
+            adminContact={adminContact}
           />
         );
 
@@ -487,6 +491,7 @@ const MainApp = () => {
             isReadOnly={true}
             semConfig={semConfig}
             staffList={staffList}
+            adminContact={adminContact}
           />
         );
       }

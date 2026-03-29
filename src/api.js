@@ -21,6 +21,9 @@ export const api = {
   getMe: () =>
     fetch(`${API_URL}/auth/me`, { headers: headers() }).then(handleResponse),
 
+  getAdminContact: () =>
+    fetch(`${API_URL}/auth/admin-contact`, { headers: headers() }).then(handleResponse),
+
   checkStudent: (rollNo, email) =>
     fetch(`${API_URL}/auth/check-student`, { method: 'POST', headers: headers(), body: JSON.stringify({ rollNo, email }) }).then(handleResponse),
 

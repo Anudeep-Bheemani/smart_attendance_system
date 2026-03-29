@@ -118,4 +118,16 @@ router.post('/check-student', async (req, res) => {
   }
 });
 
+// GET /api/auth/admin-contact — returns admin name, email, phone (no password)
+router.get('/admin-contact', authMiddleware, async (req, res) => {
+  try {
+    const admin = await prisma.admin.findFirst();
+    if (!admin) return res.status(404).json({ error: 'No admin found' });
+    const { password: _, ...safe } = admin;
+    res.json(safe);
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 module.exports = router;
