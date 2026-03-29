@@ -31,6 +31,7 @@ async function runMigrations() {
        END IF;
      END $$`,
     `ALTER TABLE "Student" ADD COLUMN IF NOT EXISTS "parentEmail" TEXT`,
+    `ALTER TABLE "Staff" ADD COLUMN IF NOT EXISTS "phone" TEXT`,
   ];
 
   for (const sql of migrations) {

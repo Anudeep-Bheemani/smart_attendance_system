@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { Lock, User, Mail, Save, Eye, EyeOff, Users } from 'lucide-react';
+import { Lock, User, Mail, Save, Eye, EyeOff, Users, Phone } from 'lucide-react';
 import { api } from '../../api';
 
 const LecturerSettings = ({ user, onUpdateProfile, branches }) => {
   const [name, setName] = useState(user.name);
   const [email, setEmail] = useState(user.email);
+  const [phone, setPhone] = useState(user.phone || '');
   const [branch, setBranch] = useState(user.branch || '');
   const [year, setYear] = useState(user.academicYear || '');
   const [currentPassword, setCurrentPassword] = useState('');
@@ -15,7 +16,7 @@ const LecturerSettings = ({ user, onUpdateProfile, branches }) => {
   const handleUpdateProfile = (e) => {
     e.preventDefault();
     const assignedClass = branch && year ? `${branch}-${year}` : user.assignedClass;
-    onUpdateProfile({ ...user, name, email, branch, academicYear: year, assignedClass });
+    onUpdateProfile({ ...user, name, email, phone, branch, academicYear: year, assignedClass });
   };
 
   const handleChangePassword = async (e) => {
@@ -65,6 +66,18 @@ const LecturerSettings = ({ user, onUpdateProfile, branches }) => {
               onChange={(e) => setEmail(e.target.value)}
               className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
               required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2 flex items-center gap-1">
+              <Phone size={14} /> Phone Number
+            </label>
+            <input
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+              placeholder="e.g. 9876543210"
             />
           </div>
           <div>

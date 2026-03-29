@@ -39,6 +39,7 @@ model Staff {
   branch            String?
   academicYear      String?
   assignedClass     String?
+  phone             String?
   verified          Boolean  @default(false)
   verificationToken String?  @unique
   createdAt         DateTime @default(now())

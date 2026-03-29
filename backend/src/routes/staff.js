@@ -57,7 +57,7 @@ router.post('/verify', async (req, res) => {
 // POST /api/staff  — admin creates staff; no password accepted; sends verification email
 router.post('/', authMiddleware, async (req, res) => {
   try {
-    const { name, email, subjects, branch, academicYear, assignedClass } = req.body;
+    const { name, email, phone, subjects, branch, academicYear, assignedClass } = req.body;
     const id = `L${Date.now()}`;
     const tempHash = await bcrypt.hash(crypto.randomBytes(16).toString('hex'), 10);
     const verificationToken = crypto.randomBytes(32).toString('hex');
@@ -67,6 +67,7 @@ router.post('/', authMiddleware, async (req, res) => {
       data: {
         id, role: 'lecturer', name, email,
         password: tempHash,
+        phone: phone || null,
         subjects: subjects || [],
         branch: branch || null,
         academicYear: academicYear || null,
@@ -90,10 +91,11 @@ router.post('/', authMiddleware, async (req, res) => {
 // PUT /api/staff/:id
 router.put('/:id', authMiddleware, async (req, res) => {
   try {
-    const { name, email, subjects, branch, academicYear, assignedClass } = req.body;
+    const { name, email, phone, subjects, branch, academicYear, assignedClass } = req.body;
     const data = {};
     if (name !== undefined) data.name = name;
     if (email !== undefined) data.email = email;
+    if (phone !== undefined) data.phone = phone || null;
     if (subjects !== undefined) data.subjects = subjects;
     if (branch !== undefined) data.branch = branch;
     if (academicYear !== undefined) data.academicYear = academicYear;
