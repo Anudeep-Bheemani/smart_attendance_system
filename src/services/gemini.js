@@ -1,37 +1,31 @@
-const apiKey = "AIzaSyDSQF_6RecVTXL-deIboZ268NGBGNwJQ6w";
+const apiKey = import.meta.env.VITE_GROQ_API_KEY;
+const MODEL = "llama-3.3-70b-versatile";
 
 export async function callGemini(prompt) {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
-  const payload = {
-    contents: [{ parts: [{ text: prompt }] }]
-  };
+  try {
+    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: MODEL,
+        messages: [{ role: "user", content: prompt }],
+        max_tokens: 1024,
+        temperature: 0.7,
+      }),
+    });
 
-  const delays = [1000, 2000, 4000, 8000, 16000];
-  
-  for (let i = 0; i <= 5; i++) {
-    try {
-      const response = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        if (response.status === 429 && i < 5) {
-          await new Promise(resolve => setTimeout(resolve, delays[i]));
-          continue;
-        }
-        throw new Error(`API Error: ${response.status}`);
-      }
-
-      const data = await response.json();
-      return data.candidates?.[0]?.content?.parts?.[0]?.text || "No response generated.";
-    } catch (error) {
-      if (i === 5) {
-        console.error("Gemini API Failed after retries:", error);
-        return "I'm having trouble connecting to the AI service right now. Please try again later.";
-      }
-      await new Promise(resolve => setTimeout(resolve, delays[i]));
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err?.error?.message || `API Error: ${response.status}`);
     }
+
+    const data = await response.json();
+    return data.choices?.[0]?.message?.content || "No response generated.";
+  } catch (error) {
+    console.error("Groq API Failed:", error);
+    return "I'm having trouble connecting to the AI service right now. Please try again later.";
   }
 }

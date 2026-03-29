@@ -73,9 +73,12 @@ const StudentDashboard = ({ student, attendanceData, onUpdateProfile, isReadOnly
 
   const generateLetter = async () => {
     setIsGenerating(true);
-    const prompt = `Write a SHORT, modern, formal leave/excuse letter for a college student. Keep it under 120 words in the body. Use expressive yet professional language. Follow this exact format:
+    const date = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' });
+    const prompt = `You are writing a formal leave application letter for a college student. Output ONLY the letter — no commentary, no markdown, no asterisks, no extra lines before or after.
 
-Date: ${new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' })}
+Use this exact structure (replace nothing, just fill the body):
+
+${date}
 
 To,
 The Head of Department,
@@ -85,11 +88,9 @@ Subject: Application for Leave of Absence
 
 Respected Sir/Madam,
 
-[Write 2-3 concise sentences. Mention the reason below, convey sincere regret for the absence, and assure commitment to cover missed work. Use warm but formal words.]
+Write exactly 2-3 sentences here: politely state the reason for absence (${letterReason}), express sincere regret, and assure that all missed coursework will be promptly covered. Use warm, expressive, formal language.
 
-Reason: ${letterReason}
-
-I kindly request your gracious approval and assure you this shall not affect my academic responsibilities.
+I humbly seek your kind approval and assure you of my continued dedication to my academic responsibilities.
 
 Thanking you,
 Yours sincerely,
@@ -97,9 +98,7 @@ Yours sincerely,
 ${student.name}
 Roll No: ${student.rollNo}
 ${student.branch} Department
-${student.email}${student.phone ? `\n${student.phone}` : ''}
-
-Rules: Output ONLY the letter. No extra notes, no markdown headings, no asterisks. Just plain formatted text.`;
+${student.email}${student.phone ? `\n${student.phone}` : ''}`;
 
     const res = await callGemini(prompt);
     setAiResult(res);
