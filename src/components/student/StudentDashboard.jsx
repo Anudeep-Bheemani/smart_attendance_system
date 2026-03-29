@@ -60,16 +60,6 @@ const StudentDashboard = ({ student, attendanceData, onUpdateProfile, isReadOnly
     downloadPDF(subjectData, `${student.name} - Attendance Report`, columns);
   };
 
-  const handleAiAction = async (mode) => {
-    setAiMode(mode);
-    if (mode === 'tips') {
-      setIsGenerating(true);
-      const prompt = `I am a college student with ${overallPercent}% attendance. Give me 3 short, actionable tips to improve my attendance and time management. Be encouraging and use emojis.`;
-      const res = await callGemini(prompt);
-      setAiResult(res);
-      setIsGenerating(false);
-    }
-  };
 
   const generateLetter = async () => {
     setIsGenerating(true);
@@ -163,7 +153,7 @@ ${student.email}${student.phone ? `\n${student.phone}` : ''}`;
                  <Sparkles size={16} /> AI Smart Assistant
                </h3>
                <p className="text-sm text-purple-100/80 mt-2">
-                 Draft excuse letters or get recovery tips instantly.
+                 Draft formal excuse letters and send them instantly.
                </p>
              </div>
              <button className="bg-white/20 hover:bg-white/30 text-white text-sm font-bold py-2 px-4 rounded-lg mt-4 w-fit backdrop-blur-sm transition-colors">
@@ -189,19 +179,12 @@ ${student.email}${student.phone ? `\n${student.phone}` : ''}`;
             <div className="p-6 overflow-y-auto">
               {aiMode === 'menu' && (
                 <div className="grid grid-cols-1 gap-4">
-                  <button 
+                  <button
                     onClick={() => setAiMode('letter')}
                     className="p-4 border border-slate-200 rounded-xl hover:border-indigo-500 hover:bg-indigo-50 transition-all text-left group"
                   >
                     <div className="font-bold text-slate-800 group-hover:text-indigo-700 mb-1">📝 Draft Excuse Letter</div>
                     <div className="text-sm text-slate-500">Generate a formal letter for sick leave or personal reasons.</div>
-                  </button>
-                  <button 
-                    onClick={() => handleAiAction('tips')}
-                    className="p-4 border border-slate-200 rounded-xl hover:border-indigo-500 hover:bg-indigo-50 transition-all text-left group"
-                  >
-                    <div className="font-bold text-slate-800 group-hover:text-indigo-700 mb-1">🚀 Improvement Strategy</div>
-                    <div className="text-sm text-slate-500">Get personalized tips to recover your attendance.</div>
                   </button>
                 </div>
               )}
