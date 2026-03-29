@@ -2,16 +2,23 @@ import React, { useState, useEffect } from 'react';
 import { User, Lock, GraduationCap, AlertTriangle, Mail, X, Brain, Sparkles, BarChart3, Shield, Moon, Sun, Loader2, CheckCircle } from 'lucide-react';
 import { api } from '../../api';
 
-const LandingPage = ({ onLogin, onVerify, darkMode, setDarkMode, verifyToken, onTokenUsed }) => {
+const LandingPage = ({ onLogin, onVerify, darkMode, setDarkMode, verifyToken, staffVerifyToken, onTokenUsed }) => {
   const [activeTab, setActiveTab] = useState('student');
   const [isVerifying, setIsVerifying] = useState(false);
-  // Token-based flow state
+  // Token-based flow state (student)
   const [tokenStudent, setTokenStudent] = useState(null);   // { name, email, rollNo }
   const [tokenLoading, setTokenLoading] = useState(false);
   const [tokenError, setTokenError] = useState('');
   const [tokenPassword, setTokenPassword] = useState('');
   const [tokenConfirm, setTokenConfirm] = useState('');
   const [tokenDone, setTokenDone] = useState(false);
+  // Token-based flow state (staff)
+  const [staffTokenMember, setStaffTokenMember] = useState(null);
+  const [staffTokenLoading, setStaffTokenLoading] = useState(false);
+  const [staffTokenError, setStaffTokenError] = useState('');
+  const [staffTokenPassword, setStaffTokenPassword] = useState('');
+  const [staffTokenConfirm, setStaffTokenConfirm] = useState('');
+  const [staffTokenDone, setStaffTokenDone] = useState(false);
   // Manual flow state
   const [verifyStep, setVerifyStep] = useState(1);
   const [verifyEmail, setVerifyEmail] = useState('');
@@ -20,7 +27,7 @@ const LandingPage = ({ onLogin, onVerify, darkMode, setDarkMode, verifyToken, on
   const [formData, setFormData] = useState({ id: '', password: '' });
   const [error, setError] = useState('');
 
-  // On mount: if a token is present, resolve it immediately
+  // On mount: resolve student token
   useEffect(() => {
     if (!verifyToken) return;
     setTokenLoading(true);
@@ -28,6 +35,15 @@ const LandingPage = ({ onLogin, onVerify, darkMode, setDarkMode, verifyToken, on
       .then(student => { setTokenStudent(student); setTokenLoading(false); })
       .catch(err => { setTokenError(err.message || 'Invalid or expired link.'); setTokenLoading(false); });
   }, [verifyToken]);
+
+  // On mount: resolve staff token
+  useEffect(() => {
+    if (!staffVerifyToken) return;
+    setStaffTokenLoading(true);
+    api.getStaffByToken(staffVerifyToken)
+      .then(staff => { setStaffTokenMember(staff); setStaffTokenLoading(false); })
+      .catch(err => { setStaffTokenError(err.message || 'Invalid or expired link.'); setStaffTokenLoading(false); });
+  }, [staffVerifyToken]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -117,6 +133,103 @@ const LandingPage = ({ onLogin, onVerify, darkMode, setDarkMode, verifyToken, on
           )}
 
           {tokenError && (
+            <button
+              onClick={onTokenUsed}
+              className="w-full mt-4 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-2.5 rounded-lg transition-colors"
+            >
+              Back to Login
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // ── Staff token set-password screen ────────────────────────────────────────
+  if (staffVerifyToken) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
+        <div className="w-full max-w-md bg-white p-8 rounded-2xl shadow-xl border border-slate-100">
+          <div className="text-center mb-8">
+            <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${staffTokenDone ? 'bg-green-100' : 'bg-indigo-100'}`}>
+              {staffTokenLoading ? <Loader2 size={32} className="text-indigo-600 animate-spin" /> :
+               staffTokenDone ? <CheckCircle size={32} className="text-green-600" /> :
+               staffTokenError ? <AlertTriangle size={32} className="text-red-500" /> :
+               <User size={32} className="text-indigo-600" />}
+            </div>
+            <h2 className="text-2xl font-bold text-slate-800">
+              {staffTokenLoading ? 'Verifying link...' :
+               staffTokenDone ? 'Account Activated!' :
+               staffTokenError ? 'Link Invalid' :
+               `Welcome, ${staffTokenMember?.name}`}
+            </h2>
+            <p className="text-slate-500 text-sm mt-2">
+              {staffTokenLoading ? 'Please wait...' :
+               staffTokenDone ? 'You can now login with your lecturer credentials.' :
+               staffTokenError ? staffTokenError :
+               `Set your password to activate your staff account`}
+            </p>
+            {!staffTokenLoading && !staffTokenError && !staffTokenDone && staffTokenMember && (
+              <div className="mt-3 text-left bg-indigo-50 border border-indigo-200 rounded-lg p-3 text-xs text-indigo-800 space-y-1">
+                {staffTokenMember.branch && <p><span className="font-semibold">Branch:</span> {staffTokenMember.branch}</p>}
+                {staffTokenMember.academicYear && <p><span className="font-semibold">Year:</span> {staffTokenMember.academicYear}</p>}
+                {staffTokenMember.assignedClass && <p><span className="font-semibold">Class:</span> {staffTokenMember.assignedClass}</p>}
+              </div>
+            )}
+          </div>
+
+          {!staffTokenLoading && !staffTokenError && !staffTokenDone && staffTokenMember && (
+            <form onSubmit={async (e) => {
+              e.preventDefault();
+              if (staffTokenPassword.length < 6) { alert('Password must be at least 6 characters.'); return; }
+              if (staffTokenPassword !== staffTokenConfirm) { alert('Passwords do not match.'); return; }
+              try {
+                await api.verifyStaffByToken(staffVerifyToken, staffTokenPassword);
+                setStaffTokenDone(true);
+                onTokenUsed();
+              } catch (err) {
+                alert(err.message || 'Failed to set password. Please try again.');
+              }
+            }} className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">New Password</label>
+                <input
+                  type="password"
+                  required
+                  minLength={6}
+                  className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                  value={staffTokenPassword}
+                  onChange={(e) => setStaffTokenPassword(e.target.value)}
+                  placeholder="At least 6 characters"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">Confirm Password</label>
+                <input
+                  type="password"
+                  required
+                  className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                  value={staffTokenConfirm}
+                  onChange={(e) => setStaffTokenConfirm(e.target.value)}
+                  placeholder="Re-enter password"
+                />
+              </div>
+              <button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 rounded-lg transition-colors shadow-lg">
+                Activate Staff Account →
+              </button>
+            </form>
+          )}
+
+          {staffTokenDone && (
+            <button
+              onClick={onTokenUsed}
+              className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 rounded-lg transition-colors shadow-lg"
+            >
+              Go to Login →
+            </button>
+          )}
+
+          {staffTokenError && (
             <button
               onClick={onTokenUsed}
               className="w-full mt-4 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-2.5 rounded-lg transition-colors"

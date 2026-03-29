@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
-import { Plus, Edit3, Trash2, Search, Filter, User, Mail, Lock, GraduationCap, Users } from 'lucide-react';
+import { Plus, Edit3, Trash2, Search, Filter, User, Users, CheckCircle, Clock } from 'lucide-react';
 
 const AdminStaffManager = ({ staffList, branches: branchesProp, onAddStaff, onUpdateStaff, onDeleteStaff }) => {
   const [isEditing, setIsEditing] = useState(false);
-  const [currentStaff, setCurrentStaff] = useState({ 
-    name: '', 
-    email: '', 
-    password: '', 
+  const [currentStaff, setCurrentStaff] = useState({
+    name: '',
+    email: '',
     branch: 'CSE',
     academicYear: '1st Year'
   });
@@ -24,7 +23,7 @@ const AdminStaffManager = ({ staffList, branches: branchesProp, onAddStaff, onUp
   };
 
   const handleSave = async () => {
-    if (!currentStaff.name || !currentStaff.email || !currentStaff.password) {
+    if (!currentStaff.name || !currentStaff.email) {
       alert('Please fill all required fields');
       return;
     }
@@ -54,7 +53,7 @@ const AdminStaffManager = ({ staffList, branches: branchesProp, onAddStaff, onUp
         alert('Staff account created successfully!');
       }
       setIsEditing(false);
-      setCurrentStaff({ name: '', email: '', password: '', branch: 'CSE', academicYear: '1st Year' });
+      setCurrentStaff({ name: '', email: '', branch: 'CSE', academicYear: '1st Year' });
     } catch (err) {
       // error already alerted in App.jsx
     }
@@ -94,9 +93,9 @@ const AdminStaffManager = ({ staffList, branches: branchesProp, onAddStaff, onUp
           <p className="text-slate-500 text-sm mt-1">Manage class in-charge assignments</p>
         </div>
         <button 
-          onClick={() => { 
-            setIsEditing(false); 
-            setCurrentStaff({ name: '', email: '', password: '', branch: 'CSE', academicYear: '1st Year' }); 
+          onClick={() => {
+            setIsEditing(false);
+            setCurrentStaff({ name: '', email: '', branch: 'CSE', academicYear: '1st Year' });
           }}
           className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 font-medium shadow-md transition-colors"
         >
@@ -111,42 +110,38 @@ const AdminStaffManager = ({ staffList, branches: branchesProp, onAddStaff, onUp
           {isEditing ? 'Edit Staff Details' : 'Add New Staff Member'}
         </h3>
         
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4">
+        {!isEditing && (
+          <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-800 text-sm flex items-start gap-2">
+            <Clock size={16} className="mt-0.5 shrink-0" />
+            <span>Staff will receive an email to set their own password. No password needed here.</span>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Staff Name</label>
-            <input 
-              className="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" 
-              placeholder="Enter staff name" 
-              value={currentStaff.name} 
-              onChange={e => setCurrentStaff({...currentStaff, name: e.target.value})} 
+            <input
+              className="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+              placeholder="Enter staff name"
+              value={currentStaff.name}
+              onChange={e => setCurrentStaff({...currentStaff, name: e.target.value})}
             />
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
-            <input 
+            <input
               type="email"
-              className="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" 
-              placeholder="Enter email address" 
-              value={currentStaff.email} 
-              onChange={e => setCurrentStaff({...currentStaff, email: e.target.value})} 
+              className="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+              placeholder="Enter email address"
+              value={currentStaff.email}
+              onChange={e => setCurrentStaff({...currentStaff, email: e.target.value})}
             />
           </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Password</label>
-            <input 
-              type="password"
-              className="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" 
-              placeholder="Create password" 
-              value={currentStaff.password} 
-              onChange={e => setCurrentStaff({...currentStaff, password: e.target.value})} 
-            />
-          </div>
-          
+
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Branch</label>
-            <select 
+            <select
               className="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
               value={currentStaff.branch}
               onChange={e => setCurrentStaff({...currentStaff, branch: e.target.value})}
@@ -154,10 +149,10 @@ const AdminStaffManager = ({ staffList, branches: branchesProp, onAddStaff, onUp
               {branches.map(branch => <option key={branch} value={branch}>{branch}</option>)}
             </select>
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Academic Year</label>
-            <select 
+            <select
               className="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
               value={currentStaff.academicYear}
               onChange={e => setCurrentStaff({...currentStaff, academicYear: e.target.value})}
@@ -182,7 +177,7 @@ const AdminStaffManager = ({ staffList, branches: branchesProp, onAddStaff, onUp
         </button>
         
         <p className="text-xs text-slate-500 mt-2 text-center">
-          Staff manage attendance for their assigned class across all subjects
+          {isEditing ? 'Update staff assignment details' : 'A verification email will be sent to the staff member to set their password'}
         </p>
       </div>
 
@@ -234,7 +229,7 @@ const AdminStaffManager = ({ staffList, branches: branchesProp, onAddStaff, onUp
               <th className="px-6 py-4">Email</th>
               <th className="px-6 py-4">Academic Year</th>
               <th className="px-6 py-4">Assigned Class</th>
-              <th className="px-6 py-4">Role</th>
+              <th className="px-6 py-4">Status</th>
               <th className="px-6 py-4 text-right">Actions</th>
             </tr>
           </thead>
@@ -261,9 +256,15 @@ const AdminStaffManager = ({ staffList, branches: branchesProp, onAddStaff, onUp
                   </span>
                 </td>
                 <td className="px-6 py-4">
-                  <span className="px-2 py-1 bg-green-50 text-green-700 rounded-full text-xs font-medium">
-                    Class In-Charge
-                  </span>
+                  {staff.verified ? (
+                    <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-50 text-green-700 rounded-full text-xs font-medium">
+                      <CheckCircle size={12} /> Verified
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 px-2 py-1 bg-amber-50 text-amber-700 rounded-full text-xs font-medium">
+                      <Clock size={12} /> Pending
+                    </span>
+                  )}
                 </td>
                 <td className="px-6 py-4 text-right flex justify-end gap-2">
                   <button 

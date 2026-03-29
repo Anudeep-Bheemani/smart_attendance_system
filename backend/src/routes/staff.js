@@ -1,12 +1,17 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 const { PrismaClient } = require('@prisma/client');
 const authMiddleware = require('../middleware/auth');
+const { sendStaffVerificationEmail } = require('../services/emailService');
 
 const router = express.Router();
 const prisma = new PrismaClient();
 
-const omitPassword = (s) => { const { password, ...rest } = s; return rest; };
+const omitPassword = (s) => {
+  const { password, verificationToken, ...rest } = s;
+  return rest;
+};
 
 // GET /api/staff
 router.get('/', authMiddleware, async (req, res) => {
@@ -18,21 +23,62 @@ router.get('/', authMiddleware, async (req, res) => {
   }
 });
 
-// POST /api/staff
+// GET /api/staff/verify-token/:token  — public, resolves token to staff info
+router.get('/verify-token/:token', async (req, res) => {
+  try {
+    const staff = await prisma.staff.findFirst({ where: { verificationToken: req.params.token } });
+    if (!staff) return res.status(404).json({ error: 'Invalid or expired link.' });
+    res.json(omitPassword(staff));
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// POST /api/staff/verify  — public, sets password and marks verified
+router.post('/verify', async (req, res) => {
+  try {
+    const { token, newPassword } = req.body;
+    if (!token || !newPassword) return res.status(400).json({ error: 'Token and password required' });
+    if (newPassword.length < 6) return res.status(400).json({ error: 'Password must be at least 6 characters' });
+    const staff = await prisma.staff.findFirst({ where: { verificationToken: token } });
+    if (!staff) return res.status(404).json({ error: 'Invalid or expired link.' });
+    const hashed = await bcrypt.hash(newPassword, 10);
+    await prisma.staff.update({
+      where: { id: staff.id },
+      data: { password: hashed, verified: true, verificationToken: null }
+    });
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// POST /api/staff  — admin creates staff; no password accepted; sends verification email
 router.post('/', authMiddleware, async (req, res) => {
   try {
-    const { name, email, password, subjects, branch, academicYear, assignedClass } = req.body;
+    const { name, email, subjects, branch, academicYear, assignedClass } = req.body;
     const id = `L${Date.now()}`;
-    const hashed = await bcrypt.hash(password || 'pass', 10);
+    const tempHash = await bcrypt.hash(crypto.randomBytes(16).toString('hex'), 10);
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+    const resolvedClass = assignedClass || (branch && academicYear ? `${branch}-${academicYear}` : null);
+
     const staff = await prisma.staff.create({
       data: {
-        id, role: 'lecturer', name, email, password: hashed,
+        id, role: 'lecturer', name, email,
+        password: tempHash,
         subjects: subjects || [],
         branch: branch || null,
         academicYear: academicYear || null,
-        assignedClass: assignedClass || null
+        assignedClass: resolvedClass,
+        verified: false,
+        verificationToken,
       }
     });
+
+    sendStaffVerificationEmail(staff).catch(err =>
+      console.error('Staff verification email failed:', err.message)
+    );
+
     res.status(201).json(omitPassword(staff));
   } catch (err) {
     if (err.code === 'P2002') return res.status(400).json({ error: 'Email already exists' });
@@ -43,16 +89,14 @@ router.post('/', authMiddleware, async (req, res) => {
 // PUT /api/staff/:id
 router.put('/:id', authMiddleware, async (req, res) => {
   try {
-    const { name, email, password, subjects, branch, academicYear, assignedClass } = req.body;
+    const { name, email, subjects, branch, academicYear, assignedClass } = req.body;
     const data = {};
     if (name !== undefined) data.name = name;
     if (email !== undefined) data.email = email;
     if (subjects !== undefined) data.subjects = subjects;
     if (branch !== undefined) data.branch = branch;
     if (academicYear !== undefined) data.academicYear = academicYear;
-    if (password) data.password = await bcrypt.hash(password, 10);
 
-    // Auto-compute assignedClass if branch or academicYear changed
     const existing = await prisma.staff.findUnique({ where: { id: req.params.id } });
     const finalBranch = branch !== undefined ? branch : existing?.branch;
     const finalYear = academicYear !== undefined ? academicYear : existing?.academicYear;

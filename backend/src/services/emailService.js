@@ -216,6 +216,70 @@ const sendAttendanceReportToParent = async (student, records, period) => {
   });
 };
 
+// ── Staff Verification / Welcome Email ───────────────────────────────────────
+
+const sendStaffVerificationEmail = async (staff) => {
+  const verifyUrl = `${process.env.APP_URL}?staff-verify=${staff.verificationToken}`;
+  const yearLabel = staff.academicYear ? `Year ${staff.academicYear}` : 'Not assigned';
+  const classLabel = staff.assignedClass || (staff.branch ? `${staff.branch} - ${yearLabel}` : 'Not assigned');
+
+  const html = `
+  <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #f8fafc; padding: 32px 16px;">
+    <div style="background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.08);">
+
+      <div style="background: linear-gradient(135deg, #1e40af, #3b82f6); padding: 36px 40px; text-align: center;">
+        <div style="font-size: 28px; font-weight: 900; color: white; letter-spacing: -0.5px;">SmartAttd</div>
+        <div style="color: #bfdbfe; font-size: 13px; margin-top: 4px;">Smart Attendance Management System</div>
+      </div>
+
+      <div style="padding: 40px;">
+        <h2 style="color: #1e293b; font-size: 22px; font-weight: 700; margin: 0 0 8px;">Welcome, ${staff.name}! 👋</h2>
+        <p style="color: #64748b; font-size: 15px; margin: 0 0 24px;">Your staff account has been created by the administrator. Please set your password to activate your account and start managing attendance.</p>
+
+        <div style="background: #f1f5f9; border-radius: 12px; padding: 20px; margin-bottom: 28px;">
+          <table style="width: 100%; border-collapse: collapse;">
+            <tr>
+              <td style="color: #94a3b8; font-size: 12px; font-weight: 600; text-transform: uppercase; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">Login Email</td>
+              <td style="color: #1e293b; font-size: 14px; font-weight: 700; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">${staff.email}</td>
+            </tr>
+            <tr>
+              <td style="color: #94a3b8; font-size: 12px; font-weight: 600; text-transform: uppercase; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">Branch</td>
+              <td style="color: #1e293b; font-size: 14px; font-weight: 700; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">${staff.branch || 'Not assigned'}</td>
+            </tr>
+            <tr>
+              <td style="color: #94a3b8; font-size: 12px; font-weight: 600; text-transform: uppercase; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">Academic Year</td>
+              <td style="color: #1e293b; font-size: 14px; font-weight: 700; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">${yearLabel}</td>
+            </tr>
+            <tr>
+              <td style="color: #94a3b8; font-size: 12px; font-weight: 600; text-transform: uppercase; padding: 8px 0;">Assigned Class</td>
+              <td style="color: #1e293b; font-size: 14px; font-weight: 700; padding: 8px 0;">${classLabel}</td>
+            </tr>
+          </table>
+        </div>
+
+        <div style="text-align: center; margin-bottom: 28px;">
+          <a href="${verifyUrl}" style="display: inline-block; background: linear-gradient(135deg, #1e40af, #3b82f6); color: white; text-decoration: none; padding: 14px 36px; border-radius: 10px; font-weight: 700; font-size: 15px; letter-spacing: 0.3px;">
+            Set My Password →
+          </a>
+          <p style="color: #94a3b8; font-size: 12px; margin-top: 12px;">Click the button above to set your password and activate your account.</p>
+          <p style="color: #cbd5e1; font-size: 11px; margin-top: 6px; word-break: break-all;">${verifyUrl}</p>
+        </div>
+
+        <div style="border-top: 1px solid #e2e8f0; padding-top: 20px;">
+          <p style="color: #94a3b8; font-size: 12px; margin: 0;">If you didn't expect this email, please contact the administrator. Do not reply to this email.</p>
+        </div>
+      </div>
+    </div>
+  </div>`;
+
+  await transporter.sendMail({
+    from: `"SmartAttd" <${process.env.GMAIL_USER}>`,
+    to: staff.email,
+    subject: `Welcome to SmartAttd — Set Your Password, ${staff.name}`,
+    html,
+  });
+};
+
 // ── Staff Reminder Email ──────────────────────────────────────────────────────
 
 const sendStaffReminderEmail = async (staff) => {
@@ -265,4 +329,40 @@ const sendStaffReminderEmail = async (staff) => {
   });
 };
 
-module.exports = { sendVerificationEmail, sendAttendanceReportToStudent, sendAttendanceReportToParent, sendStaffReminderEmail };
+// ── Excuse Letter Email ───────────────────────────────────────────────────────
+
+const sendExcuseLetterEmail = async (toEmail, toName, student, letterText) => {
+  const html = `
+  <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #f8fafc; padding: 32px 16px;">
+    <div style="background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.08);">
+
+      <div style="background: linear-gradient(135deg, #1e40af, #3b82f6); padding: 32px 40px;">
+        <div style="font-size: 22px; font-weight: 900; color: white;">SmartAttd</div>
+        <div style="color: #bfdbfe; font-size: 13px;">Student Leave Application</div>
+      </div>
+
+      <div style="padding: 36px 40px;">
+        <p style="color: #64748b; font-size: 13px; margin: 0 0 4px;">Dear <strong style="color: #1e293b;">${toName}</strong>,</p>
+        <p style="color: #64748b; font-size: 13px; margin: 0 0 24px;">You have received a leave application from <strong style="color: #1e293b;">${student.name}</strong> (Roll No: ${student.rollNo}, ${student.branch} — Year ${student.year}) via SmartAttd.</p>
+
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-left: 4px solid #3b82f6; border-radius: 8px; padding: 24px; margin-bottom: 24px; white-space: pre-wrap; font-family: Georgia, serif; font-size: 14px; color: #1e293b; line-height: 1.8;">
+${letterText}
+        </div>
+
+        <div style="border-top: 1px solid #e2e8f0; padding-top: 20px;">
+          <p style="color: #94a3b8; font-size: 12px; margin: 0;">This letter was submitted by the student through SmartAttd. Please do not reply to this email — contact the student directly.</p>
+        </div>
+      </div>
+    </div>
+  </div>`;
+
+  await transporter.sendMail({
+    from: `"SmartAttd" <${process.env.GMAIL_USER}>`,
+    to: toEmail,
+    replyTo: student.email,
+    subject: `Leave Application from ${student.name} (${student.rollNo}) — ${student.branch}`,
+    html,
+  });
+};
+
+module.exports = { sendVerificationEmail, sendAttendanceReportToStudent, sendAttendanceReportToParent, sendStaffReminderEmail, sendStaffVerificationEmail, sendExcuseLetterEmail };

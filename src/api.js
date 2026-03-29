@@ -100,6 +100,15 @@ export const api = {
   sendStaffEmails: () =>
     fetch(`${API_URL}/notifications/send-staff-reminder`, { method: 'POST', headers: headers() }).then(handleResponse),
 
+  sendExcuseLetter: (payload) =>
+    fetch(`${API_URL}/notifications/send-letter`, { method: 'POST', headers: headers(), body: JSON.stringify(payload) }).then(handleResponse),
+
+  getStaffByToken: (token) =>
+    fetch(`${API_URL}/staff/verify-token/${token}`).then(handleResponse),
+
+  verifyStaffByToken: (token, newPassword) =>
+    fetch(`${API_URL}/staff/verify`, { method: 'POST', headers: headers(), body: JSON.stringify({ token, newPassword }) }).then(handleResponse),
+
   // Sem Config
   getSemConfig: () =>
     fetch(`${API_URL}/sem-config`).then(handleResponse),

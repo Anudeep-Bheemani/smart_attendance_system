@@ -5,6 +5,7 @@ const {
   sendAttendanceReportToStudent,
   sendAttendanceReportToParent,
   sendStaffReminderEmail,
+  sendExcuseLetterEmail,
 } = require('../services/emailService');
 
 const router = express.Router();
@@ -117,6 +118,44 @@ router.post('/send-staff-reminder', authMiddleware, async (req, res) => {
   } catch (err) {
     console.error('Send staff reminder error:', err);
     res.status(500).json({ error: 'Failed to send staff reminders', details: err.message });
+  }
+});
+
+// POST /api/notifications/send-letter
+// Body: { recipientType: 'incharge' | 'admin', letterText }
+// Authenticated student sends their excuse letter to their class incharge or admin
+router.post('/send-letter', authMiddleware, async (req, res) => {
+  try {
+    const { recipientType, letterText } = req.body;
+    if (!letterText) return res.status(400).json({ error: 'Letter text is required.' });
+
+    // Get the student from the token
+    const student = await prisma.student.findUnique({ where: { id: req.user.id } });
+    if (!student) return res.status(404).json({ error: 'Student not found.' });
+
+    let toEmail, toName;
+
+    if (recipientType === 'incharge') {
+      // Find staff assigned to this student's class (branch-year)
+      const assignedClass = `${student.branch}-${student.year}`;
+      const staff = await prisma.staff.findFirst({ where: { assignedClass } });
+      if (!staff) return res.status(404).json({ error: `No class in-charge found for ${assignedClass}.` });
+      toEmail = staff.email;
+      toName = staff.name;
+    } else {
+      // Send to admin
+      const admin = await prisma.admin.findFirst();
+      if (!admin) return res.status(404).json({ error: 'No admin found.' });
+      toEmail = admin.email;
+      toName = admin.name;
+    }
+
+    await sendExcuseLetterEmail(toEmail, toName, student, letterText);
+
+    res.json({ success: true, message: `Letter sent to ${toName} (${toEmail}).`, to: toName });
+  } catch (err) {
+    console.error('Send letter error:', err);
+    res.status(500).json({ error: 'Failed to send letter.', details: err.message });
   }
 });
 

@@ -31,6 +31,10 @@ const MainApp = () => {
     const params = new URLSearchParams(window.location.search);
     return params.get('verify') || null;
   });
+  const [staffVerifyToken, setStaffVerifyToken] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('staff-verify') || null;
+  });
 
   const [students, setStudents] = useState([]);
   const [staffList, setStaffList] = useState([]);
@@ -302,8 +306,10 @@ const MainApp = () => {
         darkMode={darkMode}
         setDarkMode={setDarkMode}
         verifyToken={verifyToken}
+        staffVerifyToken={staffVerifyToken}
         onTokenUsed={() => {
           setVerifyToken(null);
+          setStaffVerifyToken(null);
           window.history.replaceState({}, '', window.location.pathname);
         }}
       />
