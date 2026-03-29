@@ -7,7 +7,7 @@ import { api } from '../../api';
 import { downloadExcel, downloadPDF } from '../../utils/downloadReport';
 import AttendanceFilter, { getDefaultSem } from '../common/AttendanceFilter';
 
-const AdminDashboard = ({ students, attendanceData, staffList, semConfig }) => {
+const AdminDashboard = ({ students, attendanceData, staffList, semConfig, branches: branchList = [] }) => {
   const [selectedYear, setSelectedYear] = useState('all');
   const [selectedBranch, setSelectedBranch] = useState('all');
   const [isSendingStudentEmails, setIsSendingStudentEmails] = useState(false);
@@ -111,21 +111,35 @@ const AdminDashboard = ({ students, attendanceData, staffList, semConfig }) => {
     { name: 'Critical (<65%)', value: critical, color: '#ef4444' },
   ];
 
-  const monthlyTrend = [
-    { month: 'Jan', attendance: 78 },
-    { month: 'Feb', attendance: 82 },
-    { month: 'Mar', attendance: 75 },
-    { month: 'Apr', attendance: 88 },
-    { month: 'May', attendance: 85 },
-    { month: 'Jun', attendance: 80 },
-  ];
+  const MONTH_ORDER = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
-  const branchData = [
-    { name: 'CSE', safe: 40, warning: 8, critical: 2 },
-    { name: 'ECE', safe: 35, warning: 10, critical: 5 },
-    { name: 'EEE', safe: 28, warning: 7, critical: 3 },
-    { name: 'MECH', safe: 45, warning: 5, critical: 2 },
-  ];
+  const monthlyTrend = useMemo(() => {
+    const months = [...new Set(attendanceData.map(r => r.month))];
+    return months
+      .sort((a, b) => MONTH_ORDER.indexOf(a) - MONTH_ORDER.indexOf(b))
+      .map(month => {
+        const recs = attendanceData.filter(r => r.month === month);
+        const tot = recs.reduce((a, r) => a + r.totalHours, 0);
+        const att = recs.reduce((a, r) => a + r.attendedHours, 0);
+        return { month: month.slice(0, 3), attendance: tot > 0 ? parseFloat((att / tot * 100).toFixed(1)) : 0 };
+      });
+  }, [attendanceData]);
+
+  const branchData = useMemo(() => {
+    const names = branchList.length > 0 ? branchList : [...new Set(students.map(s => s.branch))];
+    return names
+      .map(name => {
+        const bs = studentStats.filter(s => s.branch === name);
+        return {
+          name,
+          safe: bs.filter(s => s.percentage >= 75).length,
+          warning: bs.filter(s => s.percentage >= 65 && s.percentage < 75).length,
+          critical: bs.filter(s => s.percentage < 65).length,
+          avg: bs.length > 0 ? (bs.reduce((a, s) => a + s.percentage, 0) / bs.length).toFixed(1) : '0.0',
+        };
+      })
+      .filter(b => b.safe + b.warning + b.critical > 0);
+  }, [branchList, students, studentStats]);
 
   const recentAlerts = [
     { id: 1, type: 'critical', message: '5 students dropped below 65%', time: '2 hours ago' },
@@ -174,7 +188,7 @@ const AdminDashboard = ({ students, attendanceData, staffList, semConfig }) => {
     downloadPDF(data, 'Student Attendance Report', columns);
   };
 
-  const branches = ['CSE', 'ECE', 'MECH', 'CIVIL', 'EEE'];
+  const branches = branchList.length > 0 ? branchList : [...new Set(students.map(s => s.branch))];
   const years = ['1', '2', '3', '4'];
 
   return (
@@ -353,7 +367,7 @@ const AdminDashboard = ({ students, attendanceData, staffList, semConfig }) => {
             <tbody className="divide-y divide-slate-100">
               {branchData.map(branch => {
                 const total = branch.safe + branch.warning + branch.critical;
-                const avgPercent = ((branch.safe * 85 + branch.warning * 70 + branch.critical * 55) / total).toFixed(1);
+                const avgPercent = branch.avg;
                 return (
                   <tr key={branch.name} className="hover:bg-slate-50">
                     <td className="px-4 py-3 font-medium text-slate-800">{branch.name}</td>

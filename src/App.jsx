@@ -401,7 +401,7 @@ const MainApp = () => {
             </div>
           </div>
         );
-        return <AdminDashboard students={students} attendanceData={attendanceData} staffList={staffList} semConfig={semConfig} />;
+        return <AdminDashboard students={students} attendanceData={attendanceData} staffList={staffList} semConfig={semConfig} branches={branches} />;
 
       case 'lecturer':
         if (activeView === 'entry')
