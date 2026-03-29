@@ -96,10 +96,10 @@ router.post('/send-whatsapp', authMiddleware, async (req, res) => {
     if (year && year !== 'all') studentWhere.year = parseInt(year);
 
     const students = await prisma.student.findMany({ where: studentWhere });
-    const eligible = students.filter(s => (s.callmebotKey && s.phone) || (s.parentCallmebotKey && s.guardianPhone));
+    const eligible = students.filter(s => s.phone || s.guardianPhone);
 
     if (eligible.length === 0) {
-      return res.json({ success: true, sent: 0, message: 'No students/parents have WhatsApp alerts enabled yet.' });
+      return res.json({ success: true, sent: 0, message: 'No students found with a phone number on file.' });
     }
 
     const attFilter = { studentId: { in: students.map(s => s.id) } };
@@ -122,12 +122,12 @@ router.post('/send-whatsapp', authMiddleware, async (req, res) => {
     for (const student of eligible) {
       const records = allRecords.filter(r => r.studentId === student.id);
       try {
-        if (student.callmebotKey && student.phone) {
+        if (student.phone) {
           await sendAttendanceWhatsApp(student, records, period);
           sent++;
           await new Promise(r => setTimeout(r, 400));
         }
-        if (student.parentCallmebotKey && student.guardianPhone) {
+        if (student.guardianPhone) {
           await sendAttendanceWhatsAppToParent(student, records, period);
           sent++;
           await new Promise(r => setTimeout(r, 400));
