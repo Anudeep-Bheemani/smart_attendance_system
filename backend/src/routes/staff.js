@@ -19,7 +19,8 @@ router.get('/', authMiddleware, async (req, res) => {
     const staff = await prisma.staff.findMany({ orderBy: { name: 'asc' } });
     res.json(staff.map(omitPassword));
   } catch (err) {
-    res.status(500).json({ error: 'Server error' });
+    console.error('GET /staff error:', err);
+    res.status(500).json({ error: 'Server error', details: err.message });
   }
 });
 
