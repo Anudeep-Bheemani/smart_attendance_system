@@ -34,6 +34,9 @@ export const api = {
   createStudent: (data) =>
     fetch(`${API_URL}/students`, { method: 'POST', headers: headers(), body: JSON.stringify(data) }).then(handleResponse),
 
+  bulkCreateStudents: (students) =>
+    fetch(`${API_URL}/students/bulk`, { method: 'POST', headers: headers(), body: JSON.stringify({ students }) }).then(handleResponse),
+
   updateStudent: (id, data) =>
     fetch(`${API_URL}/students/${id}`, { method: 'PUT', headers: headers(), body: JSON.stringify(data) }).then(handleResponse),
 

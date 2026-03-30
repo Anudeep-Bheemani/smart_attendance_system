@@ -107,6 +107,55 @@ router.put('/:id', authMiddleware, async (req, res) => {
   }
 });
 
+// POST /api/students/bulk
+router.post('/bulk', authMiddleware, async (req, res) => {
+  try {
+    const { students } = req.body;
+    if (!Array.isArray(students) || students.length === 0)
+      return res.status(400).json({ error: 'No students provided' });
+
+    const results = { created: 0, skipped: 0, errors: [] };
+    const hashed = await bcrypt.hash('pass', 10);
+
+    for (const s of students) {
+      try {
+        const verificationToken = crypto.randomBytes(32).toString('hex');
+        const student = await prisma.student.create({
+          data: {
+            id: `S${Date.now()}${Math.random().toString(36).slice(2, 6)}`,
+            role: 'student',
+            name: s.name,
+            rollNo: s.rollNo,
+            email: s.email || null,
+            phone: s.phone || null,
+            branch: s.branch,
+            year: parseInt(s.year),
+            dob: s.dob || null,
+            guardianName: s.guardianName || null,
+            guardianPhone: s.guardianPhone || null,
+            parentEmail: s.parentEmail || null,
+            password: hashed,
+            verified: false,
+            verificationToken,
+          }
+        });
+        sendVerificationEmail(student).catch(() => {});
+        results.created++;
+      } catch (err) {
+        if (err.code === 'P2002') {
+          results.skipped++;
+          results.errors.push(`${s.rollNo}: already exists`);
+        } else {
+          results.errors.push(`${s.rollNo}: ${err.message}`);
+        }
+      }
+    }
+    res.json(results);
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // DELETE /api/students/:id
 router.delete('/:id', authMiddleware, async (req, res) => {
   try {

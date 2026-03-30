@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
-import { Plus, Edit3, Trash2, CheckCircle, X, Save, User, Mail, Phone, Layers, Calendar, Search, Users, GitBranch, Clock, ShieldCheck, AlertCircle } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { Plus, Edit3, Trash2, CheckCircle, X, Save, User, Mail, Phone, Layers, Calendar, Search, Users, GitBranch, Clock, ShieldCheck, AlertCircle, Upload, Download, FileSpreadsheet } from 'lucide-react';
+import * as XLSX from 'xlsx';
+import { api } from '../../api';
 
 const YEAR_LABELS = { 1: '1st Year', 2: '2nd Year', 3: '3rd Year', 4: '4th Year' };
 
@@ -47,6 +49,11 @@ const SelectField = ({ label, icon: Icon, children, ...props }) => (
 const LecturerRecordManager = ({ user, students, branches, onAddStudent, onUpdateStudent, onDeleteStudent, onAddBranch, onDeleteBranch }) => {
   const [activeTab, setActiveTab] = useState('students');
   const [showModal, setShowModal] = useState(false);
+  const [showBulkModal, setShowBulkModal] = useState(false);
+  const [bulkRows, setBulkRows] = useState([]);
+  const [bulkUploading, setBulkUploading] = useState(false);
+  const [bulkResult, setBulkResult] = useState(null);
+  const fileInputRef = useRef(null);
   const [editMode, setEditMode] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
@@ -106,6 +113,48 @@ const LecturerRecordManager = ({ user, students, branches, onAddStudent, onUpdat
       await onDeleteStudent(id);
       setDeleteConfirmId(null);
     } catch (_) {}
+  };
+
+  const downloadTemplate = () => {
+    const headers = [['name','rollNo','email','phone','branch','year','dob','guardianName','guardianPhone','parentEmail']];
+    const example = [['John Doe','24CSE101','john@college.edu','9876543210','CSE','1','2005-06-15','Parent Name','9988776655','parent@example.com']];
+    const ws = XLSX.utils.aoa_to_sheet([...headers, ...example]);
+    ws['!cols'] = headers[0].map(() => ({ wch: 20 }));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Students');
+    XLSX.writeFile(wb, 'student_upload_template.xlsx');
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      const wb = XLSX.read(evt.target.result, { type: 'binary' });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
+      setBulkRows(rows);
+      setBulkResult(null);
+    };
+    reader.readAsBinaryString(file);
+    e.target.value = '';
+  };
+
+  const handleBulkUpload = async () => {
+    if (!bulkRows.length) return;
+    setBulkUploading(true);
+    try {
+      const result = await api.bulkCreateStudents(bulkRows);
+      setBulkResult(result);
+      setBulkRows([]);
+      if (result.created > 0) {
+        // Refresh parent list
+        window.location.reload();
+      }
+    } catch (err) {
+      setBulkResult({ error: err.message });
+    }
+    setBulkUploading(false);
   };
 
   const handleAddBranch = async () => {
@@ -239,12 +288,20 @@ const LecturerRecordManager = ({ user, students, branches, onAddStudent, onUpdat
                 )}
               </div>
 
-              <button
-                onClick={handleAdd}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-colors shadow-sm flex-shrink-0"
-              >
-                <Plus size={16} /> Add Student
-              </button>
+              <div className="flex gap-2 flex-shrink-0">
+                <button
+                  onClick={() => { setShowBulkModal(true); setBulkRows([]); setBulkResult(null); }}
+                  className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-lg transition-colors shadow-sm"
+                >
+                  <Upload size={16} /> Upload Excel
+                </button>
+                <button
+                  onClick={handleAdd}
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-colors shadow-sm"
+                >
+                  <Plus size={16} /> Add Student
+                </button>
+              </div>
             </div>
 
             {/* ── Table ─────────────────────────────────────────────────── */}
@@ -473,6 +530,158 @@ const LecturerRecordManager = ({ user, students, branches, onAddStudent, onUpdat
               >
                 <Save size={15} />
                 {saving ? 'Saving...' : editMode ? 'Update Student' : 'Add Student'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Bulk Upload Modal ──────────────────────────────────────────────── */}
+      {showBulkModal && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+
+            {/* Header */}
+            <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-emerald-100 flex items-center justify-center">
+                  <FileSpreadsheet size={16} className="text-emerald-600" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-800">Mass Upload via Excel</h3>
+                  <p className="text-xs text-slate-400">Upload multiple students at once using an Excel sheet</p>
+                </div>
+              </div>
+              <button onClick={() => setShowBulkModal(false)} className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 p-1.5 rounded-lg transition-colors">
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="p-6 overflow-y-auto flex-1 space-y-5">
+
+              {/* Step 1 – Download template */}
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Step 1 — Download Template</p>
+                <p className="text-sm text-slate-600 mb-3">
+                  Download the Excel template, fill in student details, then upload it below.
+                  Required columns: <span className="font-semibold text-slate-800">name, rollNo, branch, year</span>. All others are optional.
+                </p>
+                <button
+                  onClick={downloadTemplate}
+                  className="flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-800 text-white text-sm font-semibold rounded-lg transition-colors"
+                >
+                  <Download size={15} /> Download Template (.xlsx)
+                </button>
+              </div>
+
+              {/* Template column guide */}
+              <div className="bg-blue-50 border border-blue-100 rounded-xl p-4">
+                <p className="text-xs font-bold text-blue-600 uppercase tracking-wider mb-2">Excel Column Reference</p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {[
+                    { col: 'name', note: 'Full name *' },
+                    { col: 'rollNo', note: 'Roll number *' },
+                    { col: 'branch', note: 'e.g. CSE, ECE *' },
+                    { col: 'year', note: '1 / 2 / 3 / 4 *' },
+                    { col: 'email', note: 'Student email' },
+                    { col: 'phone', note: 'Mobile number' },
+                    { col: 'dob', note: 'YYYY-MM-DD' },
+                    { col: 'guardianName', note: 'Parent name' },
+                    { col: 'guardianPhone', note: 'Parent mobile' },
+                    { col: 'parentEmail', note: 'Parent email' },
+                  ].map(({ col, note }) => (
+                    <div key={col} className="flex items-center gap-2">
+                      <span className="font-mono text-xs bg-white border border-blue-200 text-blue-700 px-2 py-0.5 rounded font-semibold">{col}</span>
+                      <span className="text-xs text-slate-500">{note}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Step 2 – Upload file */}
+              <div>
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Step 2 — Upload Filled Sheet</p>
+                <input ref={fileInputRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={handleFileChange} />
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-full border-2 border-dashed border-slate-300 hover:border-emerald-400 rounded-xl py-8 flex flex-col items-center gap-2 text-slate-400 hover:text-emerald-600 transition-colors"
+                >
+                  <Upload size={28} />
+                  <span className="text-sm font-semibold">Click to select Excel file</span>
+                  <span className="text-xs">.xlsx or .xls</span>
+                </button>
+              </div>
+
+              {/* Preview */}
+              {bulkRows.length > 0 && (
+                <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
+                  <p className="text-sm font-semibold text-emerald-700 mb-1">
+                    ✓ {bulkRows.length} student{bulkRows.length > 1 ? 's' : ''} detected in file
+                  </p>
+                  <div className="overflow-x-auto max-h-40 overflow-y-auto">
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr className="text-left text-emerald-600 border-b border-emerald-200">
+                          <th className="py-1 pr-3">Name</th>
+                          <th className="py-1 pr-3">Roll No</th>
+                          <th className="py-1 pr-3">Branch</th>
+                          <th className="py-1">Year</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {bulkRows.map((r, i) => (
+                          <tr key={i} className="border-b border-emerald-100">
+                            <td className="py-1 pr-3 text-slate-700">{r.name}</td>
+                            <td className="py-1 pr-3 font-mono text-slate-600">{r.rollNo}</td>
+                            <td className="py-1 pr-3 text-slate-600">{r.branch}</td>
+                            <td className="py-1 text-slate-600">{r.year}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* Result */}
+              {bulkResult && (
+                <div className={`rounded-xl p-4 border ${
+                  bulkResult.error ? 'bg-red-50 border-red-200' : 'bg-emerald-50 border-emerald-200'
+                }`}>
+                  {bulkResult.error ? (
+                    <p className="text-sm font-semibold text-red-700">Error: {bulkResult.error}</p>
+                  ) : (
+                    <>
+                      <p className="text-sm font-semibold text-emerald-700">
+                        ✓ {bulkResult.created} student{bulkResult.created !== 1 ? 's' : ''} added successfully
+                        {bulkResult.skipped > 0 && `, ${bulkResult.skipped} skipped (already exist)`}
+                      </p>
+                      {bulkResult.errors?.length > 0 && (
+                        <ul className="mt-2 space-y-0.5">
+                          {bulkResult.errors.map((e, i) => (
+                            <li key={i} className="text-xs text-red-600">• {e}</li>
+                          ))}
+                        </ul>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
+              <button onClick={() => setShowBulkModal(false)} className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-200 rounded-lg transition-colors">
+                Close
+              </button>
+              <button
+                onClick={handleBulkUpload}
+                disabled={bulkRows.length === 0 || bulkUploading}
+                className="flex items-center gap-2 px-5 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition-colors shadow-sm"
+              >
+                <Upload size={15} />
+                {bulkUploading ? 'Uploading...' : `Upload ${bulkRows.length > 0 ? bulkRows.length + ' Students' : ''}`}
               </button>
             </div>
           </div>
