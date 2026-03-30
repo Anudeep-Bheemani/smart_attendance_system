@@ -74,7 +74,7 @@ Overall: *${pct.toFixed(1)}%* — ${statusLabel(pct)}
 Attended: ${attendedHours}/${totalHours} hrs
 ${subjectLines ? '\nSubject-wise:\n' + subjectLines : ''}${warning}
 
-View full stats: ${process.env.APP_URL}`;
+View full stats: https://smart-attendance-system-gilt.vercel.app`;
 
   await sendGreenAPI(phone, message);
   return { sent: true };
@@ -106,7 +106,7 @@ ${student.branch} — Year ${student.year}
 Overall: *${pct.toFixed(1)}%* — ${statusLabel(pct)}
 Attended: ${attendedHours}/${totalHours} hrs${warning}
 
-View full stats: ${process.env.APP_URL}
+View full stats: https://smart-attendance-system-gilt.vercel.app
 (Login as Parent using ward's roll number)`;
 
   await sendGreenAPI(phone, message);
