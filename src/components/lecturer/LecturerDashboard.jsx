@@ -98,15 +98,98 @@ const LecturerDashboard = ({ user, students, attendanceData, semConfig }) => {
   const handleGenerateReport = async () => {
     setIsGenerating(true);
     setShowReportModal(true);
-    const prompt = `Generate a professional, short Monthly Attendance Report for the College Head of Department.
-    Class: ${currentClass}
-    Total Students: ${totalStudents}
-    Class Average Attendance: ${avgAttendance}%
-    Safe Zone Students: ${safe}
-    Warning Zone Students: ${warning}
-    Critical Zone Students (<65%): ${critical}
 
-    Please summarize the class performance, highlight the critical risk situation, and suggest 2 specific actions for the lecturer to improve attendance. Format with clear headings.`;
+    // --- Statistical metrics ---
+    const pcts = studentStats.map(s => s.pct).filter(p => p > 0);
+    const minPct = pcts.length ? Math.min(...pcts).toFixed(1) : 'N/A';
+    const maxPct = pcts.length ? Math.max(...pcts).toFixed(1) : 'N/A';
+    const sortedPcts = [...pcts].sort((a, b) => a - b);
+    const mid = Math.floor(sortedPcts.length / 2);
+    const medianPct = sortedPcts.length
+      ? (sortedPcts.length % 2 === 0
+          ? ((sortedPcts[mid - 1] + sortedPcts[mid]) / 2).toFixed(1)
+          : sortedPcts[mid].toFixed(1))
+      : 'N/A';
+
+    // --- Distribution bands ---
+    const band0_50  = studentStats.filter(s => s.pct < 50).length;
+    const band50_65 = studentStats.filter(s => s.pct >= 50 && s.pct < 65).length;
+    const band65_75 = studentStats.filter(s => s.pct >= 65 && s.pct < 75).length;
+    const band75_100 = studentStats.filter(s => s.pct >= 75).length;
+
+    // --- Critical & warning student names ---
+    const criticalList = [...studentStats]
+      .filter(s => s.pct < 65)
+      .sort((a, b) => a.pct - b.pct)
+      .map(s => `  - ${s.studentName} (${s.rollNo}): ${s.pct.toFixed(1)}%`)
+      .join('\n') || '  None';
+
+    const warningList = [...studentStats]
+      .filter(s => s.pct >= 65 && s.pct < 75)
+      .sort((a, b) => a.pct - b.pct)
+      .map(s => `  - ${s.studentName} (${s.rollNo}): ${s.pct.toFixed(1)}%`)
+      .join('\n') || '  None';
+
+    // --- Subject-wise class averages ---
+    const subjectMap = {};
+    classRecords.forEach(r => {
+      if (!subjectMap[r.subject]) subjectMap[r.subject] = { total: 0, attended: 0 };
+      subjectMap[r.subject].total += r.totalHours;
+      subjectMap[r.subject].attended += r.attendedHours;
+    });
+    const subjectLines = Object.entries(subjectMap)
+      .map(([sub, { total, attended }]) =>
+        `  - ${sub}: ${total > 0 ? ((attended / total) * 100).toFixed(1) : 0}% (${attended}/${total} hrs)`)
+      .join('\n') || '  No subject data';
+
+    const period = attFilter.activeMonths.length === 1
+      ? attFilter.activeMonths[0]
+      : `Semester ${attFilter.semester}`;
+
+    const prompt = `You are an academic data analyst. Write a thorough, structured Attendance Analysis Report for a college lecturer to present to the Head of Department.
+
+=== CLASS DATA ===
+Class: ${currentClass}
+Period: ${period}
+Total Students: ${totalStudents}
+
+=== STATISTICS ===
+Class Average: ${avgAttendance}%
+Highest Attendance: ${maxPct}%
+Lowest Attendance: ${minPct}%
+Median Attendance: ${medianPct}%
+
+=== ZONE BREAKDOWN ===
+Safe Zone (≥75%):    ${safe} students  (${totalStudents > 0 ? ((safe/totalStudents)*100).toFixed(1) : 0}%)
+Warning Zone (65–75%): ${warning} students (${totalStudents > 0 ? ((warning/totalStudents)*100).toFixed(1) : 0}%)
+Critical Zone (<65%):  ${critical} students (${totalStudents > 0 ? ((critical/totalStudents)*100).toFixed(1) : 0}%)
+
+=== DISTRIBUTION BANDS ===
+0–50%:   ${band0_50} students
+50–65%:  ${band50_65} students
+65–75%:  ${band65_75} students
+75–100%: ${band75_100} students
+
+=== CRITICAL RISK STUDENTS (must be named) ===
+${criticalList}
+
+=== WARNING ZONE STUDENTS ===
+${warningList}
+
+=== SUBJECT-WISE CLASS AVERAGES ===
+${subjectLines}
+
+Write the report with these exact sections:
+1. Executive Summary (2-3 sentences on overall class health)
+2. Statistical Overview (interpret the average, median, spread — what it means for the class)
+3. Zone Analysis (analyse Safe/Warning/Critical percentages and what it indicates)
+4. Subject-wise Performance (identify which subjects have low attendance and why it matters)
+5. Critical Risk Students (list every critical student by name and percentage — these students are at risk of not being allowed to sit exams)
+6. Warning Zone Students (list them — they need immediate attention before dropping to critical)
+7. Actionable Recommendations (3 specific actions the lecturer should take, tailored to this data)
+
+Use plain text with clear numbered headings. Be direct and data-driven. Do not use markdown asterisks.`;
+
     const report = await callGemini(prompt);
     setAiReport(report);
     setIsGenerating(false);
@@ -233,7 +316,7 @@ const LecturerDashboard = ({ user, students, attendanceData, semConfig }) => {
       {/* ── AI Report Modal ──────────────────────────────────────────────── */}
       {showReportModal && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col overflow-hidden">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden">
             <div className="flex justify-between items-center px-6 py-4 border-b border-slate-100">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 bg-violet-100 rounded-lg flex items-center justify-center">
